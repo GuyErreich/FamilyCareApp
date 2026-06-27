@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-/// Dialog to jump the calendar to a specific month and year.
+/// Bottom sheet to jump the calendar to a specific month and year.
 Future<DateTime?> showScheduleMonthYearPicker(
   BuildContext context, {
   required DateTime initial,
@@ -17,63 +17,98 @@ Future<DateTime?> showScheduleMonthYearPicker(
   var selectedMonth = initial.month;
   var selectedYear = initial.year.clamp(firstYear, lastYear);
 
-  return showDialog<DateTime>(
+  return showModalBottomSheet<DateTime>(
     context: context,
-    builder: (dialogContext) {
+    showDragHandle: true,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (sheetContext) {
       return StatefulBuilder(
         builder: (context, setState) {
-          return AlertDialog(
-            title: const Text('Go to month'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                DropdownButtonFormField<int>(
-                  isExpanded: true,
-                  value: selectedMonth,
-                  decoration: const InputDecoration(labelText: 'Month'),
-                  items: List.generate(12, (index) {
-                    final month = index + 1;
-                    final label = DateFormat.MMMM().format(DateTime(2000, month));
-                    return DropdownMenuItem(value: month, child: Text(label));
-                  }),
-                  onChanged: (value) {
-                    if (value == null) return;
-                    setState(() => selectedMonth = value);
-                  },
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<int>(
-                  isExpanded: true,
-                  value: selectedYear,
-                  decoration: const InputDecoration(labelText: 'Year'),
-                  items: years
-                      .map(
-                        (year) => DropdownMenuItem(
-                          value: year,
-                          child: Text('$year'),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (value) {
-                    if (value == null) return;
-                    setState(() => selectedYear = value);
-                  },
-                ),
-              ],
+          final scheme = Theme.of(context).colorScheme;
+
+          void applyAndClose() {
+            Navigator.pop(sheetContext, DateTime(selectedYear, selectedMonth));
+          }
+
+          return SafeArea(
+            child: SizedBox(
+              height: 248,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+                    child: Text(
+                      'Go to month',
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                  ),
+                  SizedBox(
+                    height: 40,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: years.length,
+                      separatorBuilder: (_, _) => const SizedBox(width: 8),
+                      itemBuilder: (context, index) {
+                        final year = years[index];
+                        final selected = year == selectedYear;
+                        return ChoiceChip(
+                          label: Text('$year'),
+                          selected: selected,
+                          onSelected: (_) {
+                            setState(() => selectedYear = year);
+                          },
+                          visualDensity: VisualDensity.compact,
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: 12,
+                      separatorBuilder: (_, _) => const SizedBox(width: 8),
+                      itemBuilder: (context, index) {
+                        final month = index + 1;
+                        final label =
+                            DateFormat.MMM().format(DateTime(2000, month));
+                        final selected = month == selectedMonth;
+                        return ActionChip(
+                          label: Text(label),
+                          backgroundColor: selected
+                              ? scheme.primaryContainer
+                              : scheme.surfaceContainerHigh,
+                          labelStyle: TextStyle(
+                            color: selected
+                                ? scheme.onPrimaryContainer
+                                : scheme.onSurface,
+                            fontWeight:
+                                selected ? FontWeight.w700 : FontWeight.w500,
+                          ),
+                          onPressed: () {
+                            setState(() => selectedMonth = month);
+                            applyAndClose();
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                    child: FilledButton(
+                      onPressed: applyAndClose,
+                      child: const Text('Go'),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext),
-                child: const Text('Cancel'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(
-                  dialogContext,
-                  DateTime(selectedYear, selectedMonth),
-                ),
-                child: const Text('Go'),
-              ),
-            ],
           );
         },
       );

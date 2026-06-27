@@ -1,10 +1,32 @@
 import 'package:family_care_scheduler/features/schedule/presentation/planner_slot_painters.dart';
 import 'package:flutter/material.dart';
-import 'package:infinite_calendar_view/infinite_calendar_view.dart';
 
-/// Shared visual tokens for infinite_calendar_view wrappers.
+/// Layout metrics for the month grid.
+class MonthGridMetrics {
+  const MonthGridMetrics({
+    required this.weekdayLabels,
+    required this.daySpacing,
+    required this.headerHeight,
+    required this.eventHeight,
+    required this.eventSpacing,
+    required this.spaceBetweenHeaderAndEvents,
+    required this.headerStyle,
+    required this.headerDayTextColor,
+  });
+
+  final List<String> weekdayLabels;
+  final double daySpacing;
+  final double headerHeight;
+  final double eventHeight;
+  final double eventSpacing;
+  final double spaceBetweenHeaderAndEvents;
+  final TextStyle headerStyle;
+  final Color Function(int weekdayIndex) headerDayTextColor;
+}
+
+/// Shared visual tokens for schedule calendar views.
 abstract final class ScheduleCalendarStyle {
-  static const _weekdayLabels = [
+  static const weekdayLabels = [
     'Mon',
     'Tue',
     'Wed',
@@ -17,43 +39,38 @@ abstract final class ScheduleCalendarStyle {
   /// Minimal outer chrome — calendar content fills available space.
   static BoxDecoration calendarFrame(ColorScheme scheme) {
     return BoxDecoration(
-      color: scheme.surfaceContainerLowest,
-      border: Border(
-        top: BorderSide(
-          color: scheme.outlineVariant.withValues(alpha: 0.75),
-        ),
-      ),
+      color: scheme.surface,
     );
   }
 
   static const EdgeInsets calendarFramePadding = EdgeInsets.zero;
 
-  static WeekParam monthWeekParam(ColorScheme scheme) {
-    return WeekParam(
-      startOfWeekDay: 1,
-      weekHeight: 132,
-      headerHeight: 34,
-      daySpacing: 4,
-      headerDayText: (dayOfMonth) => _weekdayLabels[(dayOfMonth - 1) % 7],
+  static MonthGridMetrics monthGridMetrics(ColorScheme scheme) {
+    return MonthGridMetrics(
+      weekdayLabels: weekdayLabels,
+      daySpacing: 6,
+      headerHeight: 24,
+      eventHeight: 18,
+      eventSpacing: 3,
+      spaceBetweenHeaderAndEvents: 4,
       headerStyle: TextStyle(
         fontSize: 11,
-        fontWeight: FontWeight.w700,
-        letterSpacing: 0.3,
-        color: scheme.onSurface.withValues(alpha: 0.8),
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.2,
+        color: scheme.onSurfaceVariant.withValues(alpha: 0.85),
       ),
-      headerDayTextColor: (day) {
-        final isWeekend = day >= 6;
+      headerDayTextColor: (weekdayIndex) {
+        final isWeekend = weekdayIndex >= 5;
         return isWeekend
-            ? scheme.onSurface.withValues(alpha: 0.55)
-            : scheme.onSurface.withValues(alpha: 0.85);
+            ? scheme.onSurfaceVariant.withValues(alpha: 0.5)
+            : scheme.onSurfaceVariant.withValues(alpha: 0.75);
       },
-      weekDecoration: const BoxDecoration(),
     );
   }
 
   static Color monthDayNumberColor(ColorScheme scheme, {required bool isToday}) {
     if (isToday) return scheme.onPrimary;
-    return scheme.onSurface.withValues(alpha: 0.82);
+    return scheme.onSurface.withValues(alpha: 0.88);
   }
 
   static Color monthDayCellColor(
@@ -62,40 +79,48 @@ abstract final class ScheduleCalendarStyle {
     required bool isOutsideMonth,
   }) {
     if (isToday) {
-      return Color.alphaBlend(
-        scheme.primaryContainer.withValues(alpha: 0.35),
-        scheme.surfaceContainerLowest,
-      );
+      return scheme.primaryContainer.withValues(alpha: 0.35);
     }
     if (isOutsideMonth) {
-      return scheme.surfaceContainer.withValues(alpha: 0.45);
+      return scheme.surface.withValues(alpha: 0.5);
     }
-    return scheme.surfaceContainerLowest;
+    return Colors.transparent;
   }
 
-  static Border monthDayCellBorder(ColorScheme scheme, {required bool isToday}) {
-    return Border.all(
-      color: isToday
-          ? scheme.primary.withValues(alpha: 0.65)
-          : scheme.outlineVariant.withValues(alpha: 0.85),
-      width: isToday ? 1.25 : 0.75,
+  static BoxDecoration? monthDayCellDecoration(
+    ColorScheme scheme, {
+    required bool isToday,
+    required bool isOutsideMonth,
+  }) {
+    if (!isToday) return null;
+    return BoxDecoration(
+      color: monthDayCellColor(
+        scheme,
+        isToday: isToday,
+        isOutsideMonth: isOutsideMonth,
+      ),
+      shape: BoxShape.circle,
+      border: Border.all(
+        color: scheme.primary.withValues(alpha: 0.85),
+        width: 2,
+      ),
     );
   }
 
   static Color plannerHourLabelColor(ColorScheme scheme) =>
-      scheme.onSurface.withValues(alpha: 0.68);
+      scheme.onSurface.withValues(alpha: 0.55);
 
   static Color plannerHourGridLineColor(ColorScheme scheme) =>
-      scheme.outlineVariant.withValues(alpha: 0.72);
+      scheme.outlineVariant.withValues(alpha: 0.45);
 
   static Color plannerHalfHourGridLineColor(ColorScheme scheme) =>
-      scheme.outlineVariant.withValues(alpha: 0.42);
+      scheme.outlineVariant.withValues(alpha: 0.28);
 
   static Color plannerQuarterHourGridLineColor(ColorScheme scheme) =>
-      scheme.outlineVariant.withValues(alpha: 0.22);
+      scheme.outlineVariant.withValues(alpha: 0.14);
 
   static Color plannerDayColumnDividerColor(ColorScheme scheme) =>
-      scheme.outlineVariant.withValues(alpha: 0.8);
+      scheme.outlineVariant.withValues(alpha: 0.55);
 
   static PlannerSlotGridPainter plannerGridPainter({
     required double heightPerMinute,
@@ -108,16 +133,16 @@ abstract final class ScheduleCalendarStyle {
   }
 
   static Color plannerTodayColumnColor(ColorScheme scheme) =>
-      scheme.primaryContainer.withValues(alpha: 0.28);
+      scheme.primaryContainer.withValues(alpha: 0.22);
 
   static Color plannerDayColumnColor(
     ColorScheme scheme, {
     required bool isToday,
   }) {
-    if (!isToday) return scheme.surfaceContainerLowest;
+    if (!isToday) return scheme.surface;
     return Color.alphaBlend(
       plannerTodayColumnColor(scheme),
-      scheme.surfaceContainerLowest,
+      scheme.surface,
     );
   }
 
@@ -125,11 +150,8 @@ abstract final class ScheduleCalendarStyle {
     ColorScheme scheme, {
     required bool isToday,
   }) {
-    if (!isToday) return scheme.surfaceContainerLow;
-    return Color.alphaBlend(
-      scheme.primaryContainer.withValues(alpha: 0.4),
-      scheme.surfaceContainerLow,
-    );
+    if (!isToday) return Colors.transparent;
+    return scheme.primaryContainer.withValues(alpha: 0.25);
   }
 
   /// Subtle zebra per hour row — not per 15-minute slot or day column.
@@ -140,8 +162,8 @@ abstract final class ScheduleCalendarStyle {
   }) {
     final isAlt = hourIndex.isOdd;
     final base = isAlt
-        ? scheme.surfaceContainer.withValues(alpha: 0.35)
-        : scheme.surfaceContainerLowest;
+        ? scheme.surfaceContainer.withValues(alpha: 0.2)
+        : scheme.surface;
     if (!isToday) return base;
     return Color.alphaBlend(plannerTodayColumnColor(scheme), base);
   }

@@ -125,47 +125,60 @@ class ScheduleLegend extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     final activeIds = shifts.map((s) => s.assignedUserId).toSet();
     final visible = members
         .where((m) => activeIds.contains(m.userId ?? m.id))
         .toList();
 
     if (visible.isEmpty) {
-      return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: Theme.of(context).colorScheme.outlineVariant,
+      return SizedBox(
+        height: 32,
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: Text(
+            'Tap an open time to assign yourself',
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                ),
           ),
-        ),
-        child: Text(
-          'Tap an open time to assign yourself',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
         ),
       );
     }
 
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: visible.map((member) {
-        final isMe = member.userId == currentUserId;
-        final color = _colorFromHex(member.colorHex);
-        return Chip(
-          avatar: CircleAvatar(
-            backgroundColor: color,
-            radius: 8,
-          ),
-          label: Text(isMe ? '${member.name} (you)' : member.name),
-          visualDensity: VisualDensity.compact,
-          side: BorderSide(color: color.withValues(alpha: 0.45)),
-        );
-      }).toList(),
+    return SizedBox(
+      height: 32,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: visible.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 12),
+        itemBuilder: (context, index) {
+          final member = visible[index];
+          final isMe = member.userId == currentUserId;
+          final color = _colorFromHex(member.colorHex);
+          return Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                isMe ? '${member.name} (you)' : member.name,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: scheme.onSurface,
+                    ),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 }
