@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:family_care_scheduler/core/providers/google_sign_in_provider.dart';
 import 'package:family_care_scheduler/features/auth/data/datasources/firestore_data_source.dart';
 import 'package:family_care_scheduler/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:family_care_scheduler/features/auth/domain/repositories/auth_repository.dart';
@@ -25,6 +26,7 @@ final authRepositoryProvider = Provider<AuthRepository>(
   (ref) => AuthRepositoryImpl(
     firebaseAuth: ref.watch(firebaseAuthProvider),
     firestore: ref.watch(firestoreDataSourceProvider),
+    googleSignIn: ref.watch(googleSignInProvider),
   ),
 );
 

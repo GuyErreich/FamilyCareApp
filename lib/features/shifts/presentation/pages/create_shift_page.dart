@@ -4,6 +4,8 @@ import 'package:family_care_scheduler/core/providers/repository_providers.dart';
 import 'package:family_care_scheduler/core/utils/date_time_utils.dart';
 import 'package:family_care_scheduler/features/auth/presentation/providers/auth_providers.dart';
 import 'package:family_care_scheduler/features/family/presentation/providers/family_providers.dart';
+import 'package:family_care_scheduler/features/google_calendar/domain/google_calendar_access.dart';
+import 'package:family_care_scheduler/features/google_calendar/domain/google_calendar_debug.dart';
 import 'package:family_care_scheduler/features/google_calendar/domain/google_calendar_service.dart';
 import 'package:family_care_scheduler/features/notifications/domain/local_notification_service.dart';
 import 'package:family_care_scheduler/features/shifts/domain/entities/shift.dart';
@@ -11,6 +13,7 @@ import 'package:family_care_scheduler/features/shifts/domain/entities/shift_stat
 import 'package:family_care_scheduler/features/shifts/domain/usecases/validate_shift_use_case.dart';
 import 'package:family_care_scheduler/shared/widgets/app_scaffold.dart';
 import 'package:family_care_scheduler/shared/widgets/primary_button.dart';
+import 'package:family_care_scheduler/features/schedule/domain/schedule_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -21,12 +24,18 @@ class CreateShiftPage extends ConsumerStatefulWidget {
     this.shiftId,
     this.initialDate,
     this.initialUserId,
+    this.initialStartHour,
+    this.initialStartMinute,
+    this.initialDurationMinutes,
     super.key,
   });
 
   final String? shiftId;
   final DateTime? initialDate;
   final String? initialUserId;
+  final int? initialStartHour;
+  final int? initialStartMinute;
+  final int? initialDurationMinutes;
 
   @override
   ConsumerState<CreateShiftPage> createState() => _CreateShiftPageState();
@@ -36,7 +45,7 @@ class _CreateShiftPageState extends ConsumerState<CreateShiftPage> {
   final _notesController = TextEditingController();
   late DateTime _date;
   late TimeOfDay _startTime;
-  var _durationMinutes = 120;
+  var _durationMinutes = ScheduleConstants.defaultDurationMinutes;
   String? _assignedUserId;
   var _addToCalendar = false;
   var _isLoading = false;
@@ -48,8 +57,22 @@ class _CreateShiftPageState extends ConsumerState<CreateShiftPage> {
     super.initState();
     final now = DateTime.now();
     _date = widget.initialDate ?? now;
-    _startTime = TimeOfDay(hour: now.hour, minute: now.minute);
+    if (widget.initialStartHour != null) {
+      _startTime = TimeOfDay(
+        hour: widget.initialStartHour!,
+        minute: widget.initialStartMinute ?? 0,
+      );
+    } else {
+      _startTime = TimeOfDay(hour: now.hour, minute: now.minute);
+    }
+    _durationMinutes =
+        widget.initialDurationMinutes ?? ScheduleConstants.defaultDurationMinutes;
     _assignedUserId = widget.initialUserId;
+    if (widget.shiftId == null) {
+      _addToCalendar =
+          ref.read(authStateProvider).valueOrNull?.googleCalendarConnected ??
+              false;
+    }
     if (widget.shiftId != null) {
       _loadShift();
     }
@@ -129,10 +152,29 @@ class _CreateShiftPageState extends ConsumerState<CreateShiftPage> {
     }
 
     var shiftToSave = shift;
+    String? calendarWarning;
     if (_addToCalendar) {
-      final calendar = ref.read(googleCalendarServiceProvider);
-      final eventId = await calendar.syncShift(shiftToSave);
-      shiftToSave = shiftToSave.copyWith(calendarEventId: eventId);
+      try {
+        final syncResult = await ref
+            .read(googleCalendarServiceProvider)
+            .syncShift(shiftToSave);
+        switch (syncResult) {
+          case Success(:final data):
+            shiftToSave = shiftToSave.copyWith(calendarEventId: data);
+            final user = ref.read(authStateProvider).valueOrNull;
+            if (user != null && !user.googleCalendarConnected) {
+              await ref.read(authRepositoryProvider).updateUser(
+                    user.copyWith(googleCalendarConnected: true),
+                  );
+            }
+          case Error(:final failure):
+            calendarWarning = failure.message;
+            googleCalendarDebug('Create shift calendar sync failed', error: failure.message);
+        }
+      } catch (e, st) {
+        calendarWarning = toCalendarFailure(e).message;
+        googleCalendarDebug('Create shift calendar sync threw', error: e, stackTrace: st);
+      }
     }
 
     final result = _existing == null
@@ -142,10 +184,20 @@ class _CreateShiftPageState extends ConsumerState<CreateShiftPage> {
     if (!mounted) return;
     result.when(
       success: (saved) async {
-        await ref
-            .read(localNotificationServiceProvider)
-            .scheduleShiftReminders(saved);
-        if (mounted) context.pop();
+        try {
+          await ref
+              .read(localNotificationServiceProvider)
+              .scheduleShiftReminders(saved);
+        } catch (_) {
+          // Shift was saved; reminders are best-effort.
+        }
+        if (!mounted) return;
+        if (calendarWarning != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(calendarWarning)),
+          );
+        }
+        context.pop();
       },
       failure: (f) => setState(() {
         _error = f.message;
@@ -232,6 +284,12 @@ class _CreateShiftPageState extends ConsumerState<CreateShiftPage> {
             ),
             SwitchListTile(
               title: const Text('Add to Google Calendar'),
+              subtitle: Text(
+                ref.watch(authStateProvider).valueOrNull?.googleCalendarConnected ==
+                        true
+                    ? 'This shift will appear on your calendar'
+                    : 'You will be asked to connect Google Calendar',
+              ),
               value: _addToCalendar,
               onChanged: (v) => setState(() => _addToCalendar = v),
             ),
