@@ -1,3 +1,4 @@
+import 'package:family_care_scheduler/core/constants/app_constants.dart';
 import 'package:family_care_scheduler/core/errors/failures.dart';
 import 'package:family_care_scheduler/core/errors/result.dart';
 import 'package:family_care_scheduler/core/utils/invite_code_generator.dart';
@@ -16,7 +17,10 @@ class AuthRepositoryImpl implements AuthRepository {
     required this._firebaseAuth,
     required this._firestore,
     GoogleSignIn? googleSignIn,
-  }) : _googleSignIn = googleSignIn ?? GoogleSignIn();
+  }) : _googleSignIn = googleSignIn ??
+            GoogleSignIn(
+              serverClientId: AppConstants.googleWebClientId,
+            );
 
   final FirebaseAuth _firebaseAuth;
   final FirestoreDataSource _firestore;
@@ -26,7 +30,11 @@ class AuthRepositoryImpl implements AuthRepository {
   Stream<AppUser?> watchAuthState() {
     return _firebaseAuth.authStateChanges().asyncMap((user) async {
       if (user == null) return null;
-      return _firestore.getUser(user.uid);
+      try {
+        return await _ensureUserProfile(user);
+      } catch (_) {
+        return null;
+      }
     });
   }
 
@@ -134,8 +142,17 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   Future<Result<AppUser>> _loadOrCreateUser(User firebaseUser) async {
+    try {
+      final user = await _ensureUserProfile(firebaseUser);
+      return Success(user);
+    } catch (e) {
+      return Error(AuthFailure(e.toString()));
+    }
+  }
+
+  Future<AppUser> _ensureUserProfile(User firebaseUser) async {
     final existing = await _firestore.getUser(firebaseUser.uid);
-    if (existing != null) return Success(existing);
+    if (existing != null) return existing;
 
     final user = AppUser(
       id: firebaseUser.uid,
@@ -145,10 +162,6 @@ class AuthRepositoryImpl implements AuthRepository {
       createdAt: DateTime.now(),
     );
     await _firestore.setUser(user.id, AppUserDtoX.fromDomain(user));
-    return Success(user);
+    return user;
   }
 }
-
-/// Family repository using Firestore.
-export 'package:family_care_scheduler/features/family/data/repositories/family_repository_impl.dart'
-    show FamilyRepositoryImpl;

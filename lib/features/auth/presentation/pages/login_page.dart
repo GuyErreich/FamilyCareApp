@@ -39,7 +39,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         );
     if (!mounted) return;
     result.when(
-      success: (_) => context.go(AppRoutes.dashboard),
+      success: (user) {
+        setState(() => _isLoading = false);
+        final destination = user.familyId == null || user.familyId!.isEmpty
+            ? AppRoutes.onboarding
+            : AppRoutes.dashboard;
+        context.go(destination);
+      },
       failure: (f) => setState(() {
         _error = f.message;
         _isLoading = false;
@@ -55,7 +61,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final result = await ref.read(authRepositoryProvider).signInWithGoogle();
     if (!mounted) return;
     result.when(
-      success: (_) => context.go(AppRoutes.dashboard),
+      success: (user) {
+        setState(() => _isLoading = false);
+        final destination = user.familyId == null || user.familyId!.isEmpty
+            ? AppRoutes.onboarding
+            : AppRoutes.dashboard;
+        context.go(destination);
+      },
       failure: (f) => setState(() {
         _error = f.message;
         _isLoading = false;
