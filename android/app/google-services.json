@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "388117547421",
+    "project_id": "family-care-scheduler-dev",
+    "storage_bucket": "family-care-scheduler-dev.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:388117547421:android:e918699aee99efe9830774",
+        "android_client_info": {
+          "package_name": "com.familycare.scheduler.family_care_scheduler"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "388117547421-fufsuan14l8gb8sr07cmc8apb1kvto9o.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD1lnRD5V6yyo-eXOYlBUOyZOmMZ0DCNC0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "388117547421-fufsuan14l8gb8sr07cmc8apb1kvto9o.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
