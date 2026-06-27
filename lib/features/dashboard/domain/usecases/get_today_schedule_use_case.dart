@@ -1,5 +1,6 @@
 import 'package:family_care_scheduler/core/utils/date_time_utils.dart';
 import 'package:family_care_scheduler/features/shifts/domain/entities/shift.dart';
+import 'package:family_care_scheduler/features/shifts/domain/entities/shift_status.dart';
 
 /// Today's schedule grouped for the dashboard.
 class TodaySchedule {
@@ -41,6 +42,3 @@ class GetTodayScheduleUseCase {
     );
   }
 }
-
-// Re-export ShiftStatus for convenience in this file's consumers
-export 'package:family_care_scheduler/features/shifts/domain/entities/shift_status.dart';

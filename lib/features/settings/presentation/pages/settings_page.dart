@@ -51,7 +51,7 @@ class SettingsPage extends ConsumerWidget {
           ListTile(
             title: const Text('Sign out'),
             leading: const Icon(Icons.logout),
-            onPressed: () async {
+            onTap: () async {
               await ref.read(fcmServiceProvider).clearToken();
               await ref.read(authRepositoryProvider).signOut();
             },
