@@ -119,7 +119,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                           ),
                         ),
                       Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                         child: ScheduleLegend(
                           members: members,
                           shifts: shifts,
@@ -135,6 +135,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                           initialDate: today,
                           currentUserId: user?.id,
                           enableSlotSelection: user != null,
+                          selection: _selection,
                           onShiftTap: (shift) =>
                               context.push('/shifts/${shift.id}'),
                           onUnavailabilityTap: user == null

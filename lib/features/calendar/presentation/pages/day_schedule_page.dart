@@ -43,7 +43,7 @@ class _DaySchedulePageState extends ConsumerState<DaySchedulePage> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: shiftsAsync.when(
               data: (shifts) => ScheduleLegend(
                 members: members,
@@ -67,6 +67,7 @@ class _DaySchedulePageState extends ConsumerState<DaySchedulePage> {
                   initialDate: day,
                   currentUserId: user?.id,
                   enableSlotSelection: user != null,
+                  selection: _selection,
                   onShiftTap: (shift) => context.push('/shifts/${shift.id}'),
                   onUnavailabilityTap: user == null
                       ? null

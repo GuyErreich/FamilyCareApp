@@ -1,23 +1,27 @@
 import 'package:family_care_scheduler/core/errors/result.dart';
 import 'package:family_care_scheduler/core/router/app_routes.dart';
+import 'package:family_care_scheduler/core/theme/app_motion.dart';
 import 'package:family_care_scheduler/core/utils/date_time_utils.dart';
 import 'package:family_care_scheduler/features/auth/presentation/providers/auth_providers.dart';
 import 'package:family_care_scheduler/features/family/presentation/providers/family_providers.dart';
-import 'package:family_care_scheduler/features/schedule/domain/schedule_constants.dart';
 import 'package:family_care_scheduler/features/schedule/domain/schedule_slot_selection.dart';
 import 'package:family_care_scheduler/features/schedule/presentation/family_schedule_month.dart';
 import 'package:family_care_scheduler/features/schedule/presentation/family_schedule_planner.dart';
+import 'package:family_care_scheduler/features/schedule/presentation/planner/schedule_planner_view.dart';
 import 'package:family_care_scheduler/features/schedule/presentation/schedule_actions.dart';
+import 'package:family_care_scheduler/features/schedule/presentation/schedule_calendar_toolbar.dart';
 import 'package:family_care_scheduler/features/schedule/presentation/schedule_preferences.dart';
 import 'package:family_care_scheduler/features/schedule/presentation/schedule_month_year_picker.dart';
 import 'package:family_care_scheduler/features/schedule/presentation/schedule_slot_confirm_bar.dart';
+import 'package:family_care_scheduler/features/schedule/presentation/schedule_view_mode.dart';
+import 'package:family_care_scheduler/features/schedule/presentation/schedule_view_mode_sheet.dart';
 import 'package:family_care_scheduler/features/unavailability/presentation/providers/unavailability_providers.dart';
 import 'package:family_care_scheduler/shared/widgets/app_scaffold.dart';
 import 'package:family_care_scheduler/shared/widgets/async_value_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:infinite_calendar_view/infinite_calendar_view.dart';
 
 class CalendarPage extends ConsumerStatefulWidget {
   const CalendarPage({super.key});
@@ -30,13 +34,18 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
   var _monthView = false;
   late DateTime _focusedDate;
   ScheduleSlotSelection? _selection;
-  final _plannerKey = GlobalKey<EventsPlannerState>();
+  final _plannerKey = GlobalKey<SchedulePlannerViewState>();
   final _monthKey = GlobalKey<FamilyScheduleMonthState>();
 
   @override
   void initState() {
     super.initState();
     _focusedDate = DateTimeUtils.dateOnly(DateTime.now());
+  }
+
+  ScheduleViewMode _viewModeFor(int daysShowed) {
+    if (_monthView) return ScheduleViewMode.month;
+    return daysShowed == 7 ? ScheduleViewMode.week : ScheduleViewMode.threeDay;
   }
 
   DateTime get _weekStart => DateTimeUtils.startOfWeek(_focusedDate);
@@ -47,13 +56,55 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
       ? _weekStart
       : DateTimeUtils.dateOnly(_focusedDate);
 
-  String _plannerLabel(int daysShowed) {
+  String _toolbarLabel(int daysShowed) {
+    if (_monthView) return DateTimeUtils.formatMonthYear(_monthAnchor);
     final start = _plannerStart(daysShowed);
     if (daysShowed == 7) {
       return 'Week of ${DateTimeUtils.formatDate(start)}';
     }
     final end = start.add(Duration(days: daysShowed - 1));
     return '${DateTimeUtils.formatDate(start)} – ${DateTimeUtils.formatDate(end)}';
+  }
+
+  Future<void> _setViewMode(ScheduleViewMode mode) async {
+    HapticFeedback.selectionClick();
+
+    switch (mode) {
+      case ScheduleViewMode.month:
+        setState(() {
+          _monthView = true;
+          _selection = null;
+        });
+      case ScheduleViewMode.threeDay:
+        if (_monthView) {
+          setState(() {
+            _monthView = false;
+            _selection = null;
+          });
+        }
+        await _setDaysShowed(3);
+      case ScheduleViewMode.week:
+        if (_monthView) {
+          setState(() {
+            _monthView = false;
+            _selection = null;
+          });
+        }
+        await _setDaysShowed(7);
+    }
+  }
+
+  Future<void> _cycleViewMode(int daysShowed) async {
+    await _setViewMode(_viewModeFor(daysShowed).next);
+  }
+
+  Future<void> _openViewModeSheet(int daysShowed) async {
+    final picked = await showScheduleViewModeSheet(
+      context,
+      current: _viewModeFor(daysShowed),
+    );
+    if (picked == null || !mounted) return;
+    await _setViewMode(picked);
   }
 
   Future<void> _setDaysShowed(int days) async {
@@ -102,47 +153,21 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
 
     return AppScaffold(
       title: 'Calendar',
-      actions: [
-        if (!_monthView)
-          PopupMenuButton<int>(
-            tooltip: 'Schedule view',
-            icon: Icon(
-              daysShowed == 3 ? Icons.view_day : Icons.view_week,
-            ),
-            initialValue: daysShowed,
-            onSelected: _setDaysShowed,
-            itemBuilder: (context) => ScheduleConstants.allowedDaysShowed
-                .map(
-                  (days) => PopupMenuItem(
-                    value: days,
-                    child: Text(scheduleDaysShowedLabel(days)),
-                  ),
-                )
-                .toList(),
-          ),
-        IconButton(
-          onPressed: () => setState(() {
-            _monthView = !_monthView;
-            _selection = null;
-          }),
-          icon: Icon(_monthView ? Icons.view_week : Icons.calendar_view_month),
-          tooltip: _monthView ? 'Planner view' : 'Month view',
-        ),
-      ],
       body: Column(
         children: [
-          _CalendarHeader(
-            label: _monthView
-                ? DateTimeUtils.formatMonthYear(_monthAnchor)
-                : _plannerLabel(daysShowed),
-            onLabelTap: () => _pickMonthYear(daysShowed),
+          ScheduleCalendarToolbar(
+            label: _toolbarLabel(daysShowed),
+            viewMode: _viewModeFor(daysShowed),
             onPrevious: () => _stepCalendar(-1, daysShowed),
             onNext: () => _stepCalendar(1, daysShowed),
             onToday: () => _goToToday(daysShowed),
+            onLabelTap: () => _pickMonthYear(daysShowed),
+            onViewModeTap: () => _cycleViewMode(daysShowed),
+            onViewModeLongPress: () => _openViewModeSheet(daysShowed),
           ),
           if (!_monthView)
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               child: shiftsAsync.when(
                 data: (shifts) => ScheduleLegend(
                   members: members,
@@ -154,50 +179,68 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
               ),
             ),
           Expanded(
-            child: AsyncValueWidget(
-              value: shiftsAsync,
-              data: (shifts) => _monthView
-                    ? FamilyScheduleMonth(
-                        key: _monthKey,
-                        shifts: shifts,
-                        members: members,
-                        initialMonth: _monthAnchor,
-                        onDayTap: (day) => context.push(
-                          AppRoutes.daySchedule,
-                          extra: {'day': DateTimeUtils.dateOnly(day)},
-                        ),
-                        onShiftTap: (shift) =>
-                            context.push('/shifts/${shift.id}'),
-                      )
-                    : AsyncValueWidget(
-                        value: blocksAsync,
-                        data: (blocks) => FamilySchedulePlanner(
-                          plannerKey: _plannerKey,
+            child: GestureDetector(
+              onHorizontalDragEnd: (details) {
+                final velocity = details.primaryVelocity ?? 0;
+                if (velocity.abs() < 200) return;
+                HapticFeedback.selectionClick();
+                _stepCalendar(velocity > 0 ? -1 : 1, daysShowed);
+              },
+              child: AnimatedSwitcher(
+                duration: AppMotion.medium,
+                switchInCurve: AppMotion.enter,
+                switchOutCurve: AppMotion.exit,
+                child: AsyncValueWidget(
+                  key: ValueKey(_monthView ? 'month' : 'planner'),
+                  value: shiftsAsync,
+                  data: (shifts) => _monthView
+                      ? FamilyScheduleMonth(
+                          key: _monthKey,
                           shifts: shifts,
-                          unavailabilities: blocks,
                           members: members,
-                          daysShowed: daysShowed,
-                          initialDate: plannerStart,
-                          currentUserId: user?.id,
-                          enableSlotSelection: user != null,
+                          initialMonth: _monthAnchor,
+                          onDayTap: (day) {
+                            HapticFeedback.selectionClick();
+                            context.push(
+                              AppRoutes.daySchedule,
+                              extra: {'day': DateTimeUtils.dateOnly(day)},
+                            );
+                          },
                           onShiftTap: (shift) =>
                               context.push('/shifts/${shift.id}'),
-                          onUnavailabilityTap: user == null
-                              ? null
-                              : (block) => showUnavailabilityActions(
-                                    context,
-                                    ref,
-                                    block: block,
-                                    currentUserId: user.id,
-                                    canManageOthers: canManageOthers,
-                                  ),
-                          onSlotSelected: user == null
-                              ? null
-                              : (slot) => setState(() => _selection = slot),
+                        )
+                      : AsyncValueWidget(
+                          value: blocksAsync,
+                          data: (blocks) => FamilySchedulePlanner(
+                            plannerKey: _plannerKey,
+                            shifts: shifts,
+                            unavailabilities: blocks,
+                            members: members,
+                            daysShowed: daysShowed,
+                            initialDate: plannerStart,
+                            currentUserId: user?.id,
+                            enableSlotSelection: user != null,
+                            selection: _selection,
+                            onShiftTap: (shift) =>
+                                context.push('/shifts/${shift.id}'),
+                            onUnavailabilityTap: user == null
+                                ? null
+                                : (block) => showUnavailabilityActions(
+                                      context,
+                                      ref,
+                                      block: block,
+                                      currentUserId: user.id,
+                                      canManageOthers: canManageOthers,
+                                    ),
+                            onSlotSelected: user == null
+                                ? null
+                                : (slot) => setState(() => _selection = slot),
+                          ),
                         ),
-                        ),
+                ),
               ),
             ),
+          ),
           if (_selection != null && user != null && !_monthView)
             ScheduleSlotConfirmBar(
               selection: _selection!,
@@ -230,6 +273,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
                 setState(() => _selection = null);
                 switch (result) {
                   case Success():
+                    HapticFeedback.mediumImpact();
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Unavailability saved')),
                     );
@@ -282,6 +326,7 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
   }
 
   void _goToToday(int daysShowed) {
+    HapticFeedback.selectionClick();
     final today = DateTime.now();
     setState(() {
       _focusedDate = _monthView
@@ -295,94 +340,14 @@ class _CalendarPageState extends ConsumerState<CalendarPage> {
     _jumpCalendarTo(today);
   }
 
-  /// Jump after layout; avoids scroll_controller assertion when combined with rebuilds.
   void _jumpCalendarTo(DateTime date) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        if (_monthView) {
-          _monthKey.currentState?.jumpToDate(date);
-        } else {
-          _plannerKey.currentState?.jumpToDate(date);
-        }
-      });
+      if (_monthView) {
+        _monthKey.currentState?.jumpToDate(date);
+      } else {
+        _plannerKey.currentState?.jumpToDate(date);
+      }
     });
-  }
-}
-
-class _CalendarHeader extends StatelessWidget {
-  const _CalendarHeader({
-    required this.label,
-    required this.onLabelTap,
-    required this.onPrevious,
-    required this.onNext,
-    required this.onToday,
-  });
-
-  final String label;
-  final VoidCallback onLabelTap;
-  final VoidCallback onPrevious;
-  final VoidCallback onNext;
-  final VoidCallback onToday;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: scheme.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: scheme.outlineVariant.withValues(alpha: 0.75),
-          ),
-        ),
-        child: Row(
-          children: [
-            IconButton(onPressed: onPrevious, icon: const Icon(Icons.chevron_left)),
-            Expanded(
-              child: Column(
-                children: [
-                  InkWell(
-                    onTap: onLabelTap,
-                    borderRadius: BorderRadius.circular(8),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Flexible(
-                            child: Text(
-                              label,
-                              textAlign: TextAlign.center,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleSmall
-                                  ?.copyWith(color: scheme.primary),
-                            ),
-                          ),
-                          Icon(
-                            Icons.arrow_drop_down,
-                            color: scheme.primary,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  TextButton(onPressed: onToday, child: const Text('Today')),
-                ],
-              ),
-            ),
-            IconButton(onPressed: onNext, icon: const Icon(Icons.chevron_right)),
-          ],
-        ),
-      ),
-    );
   }
 }
