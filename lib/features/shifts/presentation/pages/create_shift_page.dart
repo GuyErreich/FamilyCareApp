@@ -46,8 +46,9 @@ class _CreateShiftPageState extends ConsumerState<CreateShiftPage> {
   @override
   void initState() {
     super.initState();
-    _date = widget.initialDate ?? DateTime.now();
-    _startTime = TimeOfDay.now();
+    final now = DateTime.now();
+    _date = widget.initialDate ?? now;
+    _startTime = TimeOfDay(hour: now.hour, minute: now.minute);
     _assignedUserId = widget.initialUserId;
     if (widget.shiftId != null) {
       _loadShift();
@@ -181,12 +182,18 @@ class _CreateShiftPageState extends ConsumerState<CreateShiftPage> {
             ),
             ListTile(
               title: const Text('Start time'),
-              subtitle: Text(_startTime.format(context)),
+              subtitle: Text(DateTimeUtils.formatTimeOfDay(_startTime)),
               trailing: const Icon(Icons.access_time),
               onTap: () async {
                 final picked = await showTimePicker(
                   context: context,
                   initialTime: _startTime,
+                  builder: (context, child) => MediaQuery(
+                    data: MediaQuery.of(context).copyWith(
+                      alwaysUse24HourFormat: true,
+                    ),
+                    child: child!,
+                  ),
                 );
                 if (picked != null) setState(() => _startTime = picked);
               },

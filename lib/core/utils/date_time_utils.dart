@@ -13,7 +13,20 @@ abstract final class DateTimeUtils {
 
   static String formatDate(DateTime date) => DateFormat.yMMMd().format(date);
 
-  static String formatTime(DateTime dateTime) => DateFormat.jm().format(dateTime);
+  /// 24-hour clock, e.g. `14:30`.
+  static String formatTime(DateTime dateTime) => DateFormat('HH:mm').format(dateTime);
+
+  /// 24-hour clock for [TimeOfDay], e.g. `09:05`.
+  static String formatTimeOfDay(TimeOfDay time) {
+    final hour = time.hour.toString().padLeft(2, '0');
+    final minute = time.minute.toString().padLeft(2, '0');
+    return '$hour:$minute';
+  }
+
+  /// Start and end time in 24-hour format, e.g. `14:30 – 16:30`.
+  static String formatTimeRange(DateTime start, DateTime end) {
+    return '${formatTime(start)} – ${formatTime(end)}';
+  }
 
   static String formatDuration(int minutes) {
     final hours = minutes ~/ 60;

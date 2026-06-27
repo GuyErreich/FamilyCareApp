@@ -110,7 +110,10 @@ class _ShiftDetailsPageState extends ConsumerState<ShiftDetailsPage> {
             ),
             _DetailRow(
               label: 'Time',
-              value: DateTimeUtils.formatTime(shift.startDateTime),
+              value: DateTimeUtils.formatTimeRange(
+                shift.startDateTime,
+                shift.endDateTime,
+              ),
             ),
             _DetailRow(
               label: 'Duration',

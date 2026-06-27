@@ -119,7 +119,7 @@ class _ShiftCard extends StatelessWidget {
         leading: member != null ? MemberAvatar(member: member) : const Icon(Icons.person),
         title: Text(member?.name ?? 'Companion'),
         subtitle: Text(
-          '${DateTimeUtils.formatTime(shift.startDateTime)} · '
+          '${DateTimeUtils.formatTimeRange(shift.startDateTime, shift.endDateTime)} · '
           '${DateTimeUtils.formatDuration(shift.durationMinutes)}',
         ),
         trailing: const Icon(Icons.chevron_right),

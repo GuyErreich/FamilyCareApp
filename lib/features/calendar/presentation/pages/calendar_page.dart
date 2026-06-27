@@ -275,7 +275,12 @@ class _DayShiftSheet extends StatelessWidget {
                 return ListTile(
                   leading: member != null ? MemberAvatar(member: member) : null,
                   title: Text(member?.name ?? 'Companion'),
-                  subtitle: Text(DateTimeUtils.formatTime(shift.startDateTime)),
+                  subtitle: Text(
+                    DateTimeUtils.formatTimeRange(
+                      shift.startDateTime,
+                      shift.endDateTime,
+                    ),
+                  ),
                   onTap: () {
                     Navigator.pop(context);
                     context.push('/shifts/${shift.id}');
