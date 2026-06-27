@@ -4,9 +4,32 @@ Coordinate who accompanies Grandpa throughout the day. Minimize scheduling confl
 
 ## Prerequisites
 
-- Flutter stable (3.44+)
-- Firebase CLI (`npx -y firebase-tools@latest`)
-- Android Studio / Xcode for mobile targets
+- Flutter stable (3.44+) — [manual Linux install](https://docs.flutter.dev/install/manual)
+- Firebase CLI (`npm install -g firebase-tools` or `npx firebase-tools@latest`)
+- Android Studio on **Windows** for Android builds; Xcode on macOS for iOS builds
+
+### WSL + Cursor (this project)
+
+This repo is developed in **WSL2** with **Cursor**. Flutter is installed manually to `~/flutter` (not Homebrew).
+
+**Shell environment** — all exports live in `~/.zshenv`:
+
+```bash
+source ~/.zshenv   # or open a new terminal
+```
+
+See `.cursor/skills/family-care-wsl-dev/SKILL.md` for Android SDK wrappers, licenses, WSL memory, and troubleshooting.
+
+**Cursor tip:** Open the folder via WSL (`\\wsl$\Ubuntu\home\opsxe\Development\FamilyCareApp`) so the integrated terminal uses your WSL `flutter` from `~/.zshenv`.
+
+**WSL memory:** Flutter builds are heavy. Set `C:\Users\user\.wslconfig` to at least `memory=8GB`, then `wsl --shutdown`. Run `flutter` / `task run` in an **external** terminal if Cursor disconnects from WSL.
+
+**Platform notes:**
+
+| Target | Where to build |
+|--------|----------------|
+| Android | WSL + Windows Android Studio SDK + emulator |
+| iOS | macOS only |
 
 ## Setup
 
@@ -23,11 +46,14 @@ flutterfire configure
 
 ### Firebase
 
-1. Create a Firebase project or use `family-care-scheduler-dev`.
-2. Enable **Authentication** (Google, Email/Password).
-3. Create a **Firestore** database.
-4. Enable **Cloud Messaging**.
-5. Run `flutterfire configure` to replace placeholder values in `lib/firebase_options.dart`.
+Project: `family-care-scheduler-dev` (see `.firebaserc`).
+
+1. Enable **Authentication** (Google, Email/Password).
+2. Create a **Firestore** database.
+3. Enable **Cloud Messaging**.
+4. `flutterfire configure` needs the **`firebase` CLI on PATH** (`npm install -g firebase-tools`).
+
+Android/iOS apps are registered; `android/app/google-services.json` and `lib/firebase_options.dart` are configured.
 
 ### Local emulators (optional)
 
@@ -37,8 +63,11 @@ npx -y firebase-tools@latest emulators:start
 
 ## Run
 
+This app targets **Android and iOS only** (no linux/web folders). Start an Android emulator in Windows Android Studio, then:
+
 ```bash
-flutter run
+adb devices
+flutter run -d <android-device-id>   # or: task run
 ```
 
 ## Architecture
@@ -67,7 +96,7 @@ Each feature has `data/`, `domain/`, and `presentation/` layers.
 
 ## Commands
 
-See `Taskfile.yml` for common tasks (`task run`, `task test`, `task gen`, `task analyze`).
+See `Taskfile.yml` for common tasks (`task install`, `task gen`, `task test`, `task analyze`, `task all`, `task run`).
 
 ## Testing
 

@@ -33,9 +33,30 @@ export PATH="$JAVA_HOME/bin:$PATH"
 
 # Chrome for flutter web (optional)
 export CHROME_EXECUTABLE="/mnt/c/Program Files/Google/Chrome/Application/chrome.exe"
+
+# NVM (firebase CLI via npm global — required for flutterfire configure)
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 ```
 
 Adjust `user` if the Windows username differs.
+
+## WSL memory (Cursor disconnects)
+
+Flutter/Gradle can OOM WSL (~4GB default) and disconnect Cursor. Fix on Windows:
+
+`C:\Users\user\.wslconfig`:
+
+```ini
+[wsl2]
+memory=8GB
+processors=4
+swap=4GB
+```
+
+Then: `wsl --shutdown` and reopen Cursor.
+
+Run heavy `flutter` / `task run` commands in an **external** Windows Terminal tab when possible.
 
 ## Architecture (WSL + Cursor + Android Studio)
 
@@ -43,10 +64,12 @@ Adjust `user` if the Windows username differs.
 |-----------|----------|
 | Code, Flutter, Dart, tests | WSL (`~/Development/FamilyCareApp`) |
 | Android SDK, emulator | Windows (`C:\Users\user\AppData\Local\Android\Sdk`) |
-| Android Studio | Windows (Quail); can open `\\wsl$\Ubuntu-24.04\home\opsxe\...` |
+| Android Studio | Windows (Quail); open `\\wsl$\Ubuntu\home\opsxe\...` |
 | iOS builds | macOS only |
 
 Do **not** use Homebrew for Flutter on WSL. Use official manual install to `~/flutter`.
+
+This Flutter project has **android + ios only** — not linux/web. `flutter run` without an Android device fails.
 
 ## Windows SDK bridge scripts (WSL)
 
@@ -57,7 +80,7 @@ Windows SDK ships `.exe` only. WSL Flutter needs Unix names. Wrappers must exist
 - `$ANDROID_HOME/build-tools/<version>/aapt2` → `aapt2.exe`
 - `$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager` → **Linux** binary (not cmd.exe wrapper)
 
-Recreate `adb` wrapper if missing:
+Recreate wrappers for each installed build-tools version (e.g. `36.1.0`, `37.0.0`):
 
 ```bash
 PT="$ANDROID_HOME/platform-tools"
@@ -66,6 +89,15 @@ cat > "$PT/adb" << 'EOF'
 exec "$(dirname "$0")/adb.exe" "$@"
 EOF
 chmod +x "$PT/adb"
+
+BT="$ANDROID_HOME/build-tools/37.0.0"   # repeat for each version
+for tool in aapt aapt2; do
+  cat > "$BT/$tool" << EOF
+#!/usr/bin/env bash
+exec "\$(dirname "\$0")/${tool}.exe" "\$@"
+EOF
+  chmod +x "$BT/$tool"
+done
 ```
 
 ## Common commands
@@ -73,32 +105,29 @@ chmod +x "$PT/adb"
 ```bash
 source ~/.zshenv
 cd ~/Development/FamilyCareApp
-flutter doctor -v
-flutter pub get
-dart run build_runner build --delete-conflicting-outputs
-flutter run -d linux          # works on WSL without Android
-flutter run -d <android-id>   # after licenses + device/emulator
+task test        # safe in Cursor — no Gradle
+task analyze
+adb devices
+flutter run -d <android-id>   # use external terminal if Cursor disconnects
 ```
 
-Project tasks: `task get`, `task gen`, `task test`, `task run` (see `Taskfile.yml`).
+Project tasks: `task get`, `task gen`, `task all` (see `Taskfile.yml`).
 
 ## flutter doctor checklist
 
 | Issue | Fix |
 |-------|-----|
 | `adb` not found | Add `adb` wrapper (above) |
-| `aapt` not found | Add `aapt`/`aapt2` wrappers in `build-tools/<version>/` |
-| License status unknown | Linux `sdkmanager` + `yes \| flutter doctor --android-licenses`, or accept in Android Studio SDK Manager |
+| `aapt` not found | Add `aapt`/`aapt2` wrappers per build-tools version |
+| License status unknown | Linux `sdkmanager` + `yes \| flutter doctor --android-licenses`, or accept in Android Studio |
 | Chrome not found | Set `CHROME_EXECUTABLE` in `~/.zshenv` (optional) |
-| Android Studio not installed | Normal when Studio is on Windows only |
+| Cursor disconnects on flutter | Increase WSL memory; run flutter externally |
 
 ## Licenses (one-time)
 
 ```bash
+source ~/.zshenv
 cd ~
-export ANDROID_HOME="/mnt/c/Users/user/AppData/Local/Android/Sdk"
-export JAVA_HOME="/usr/lib/jvm/java-17-openjdk-amd64"
-# Ensure Linux sdkmanager is in cmdline-tools/latest/bin (not .bat wrapper)
 yes | flutter doctor --android-licenses
 ```
 
@@ -107,11 +136,13 @@ Or accept licenses in **Android Studio → SDK Manager** on Windows.
 ## Firebase (this project)
 
 ```bash
+npm install -g firebase-tools    # flutterfire requires `firebase` on PATH
 dart pub global activate flutterfire_cli
-flutterfire configure   # after Firebase login
+firebase login
+flutterfire configure --project=family-care-scheduler-dev --platforms=android,ios --yes
 ```
 
-Placeholder config: `lib/firebase_options.dart` until `flutterfire configure` runs.
+Configured: `family-care-scheduler-dev`, `lib/firebase_options.dart`, `android/app/google-services.json`.
 
 ## When updating this skill
 

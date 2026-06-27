@@ -7,6 +7,7 @@ vars:
 tasks:
   install:
     desc: Install dependencies (flutter pub get)
+    aliases: [get]
     cmds:
       - "{{.FLUTTER}} pub get"
 
@@ -27,6 +28,7 @@ tasks:
 
   generate:
     desc: Run freezed / json_serializable code generation
+    aliases: [gen]
     cmds:
       - "{{.DART}} run build_runner build --delete-conflicting-outputs"
 
@@ -40,13 +42,11 @@ tasks:
     cmds:
       - "{{.DART}} format lib test"
 
-  # Short aliases
-  get:
-    desc: Alias for install
+  all:
+    desc: Full check — install, generate, analyze, test, and build
     cmds:
       - task: install
-
-  gen:
-    desc: Alias for generate
-    cmds:
       - task: generate
+      - task: analyze
+      - task: test
+      - task: build
