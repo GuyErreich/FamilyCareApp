@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "388117547421-m4h7h5cudd0l1d7fdk8ba7nv6dbfp6bo.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.familycare.scheduler.family_care_scheduler",
+            "certificate_hash": "5d531e8b2f677c44af989ffeb22765f13db230de"
+          }
+        },
+        {
           "client_id": "388117547421-fufsuan14l8gb8sr07cmc8apb1kvto9o.apps.googleusercontent.com",
           "client_type": 3
         }
@@ -29,6 +37,13 @@
             {
               "client_id": "388117547421-fufsuan14l8gb8sr07cmc8apb1kvto9o.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "388117547421-5708mcqmaqm5v6ave82ijbtncthu7isr.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.familycare.scheduler.familyCareScheduler"
+              }
             }
           ]
         }
