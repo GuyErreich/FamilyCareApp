@@ -1,52 +1,63 @@
 version: '3'
 
 vars:
-  FLUTTER: flutter
-  DART: dart
+  WEB_DIR: web
 
 tasks:
-  install:
-    desc: Install dependencies (flutter pub get)
-    aliases: [get]
+  web:install:
+    desc: Install web app npm dependencies
+    dir: "{{.WEB_DIR}}"
     cmds:
-      - "{{.FLUTTER}} pub get"
+      - npm install
 
-  build:
-    desc: Build Android debug APK
+  web:dev:
+    desc: Run Vite dev server
+    dir: "{{.WEB_DIR}}"
     cmds:
-      - "{{.FLUTTER}} build apk --debug"
+      - npm run dev
 
-  test:
-    desc: Run all tests
+  web:build:
+    desc: Production build to web/dist
+    dir: "{{.WEB_DIR}}"
     cmds:
-      - "{{.FLUTTER}} test"
+      - npm run build
 
-  analyze:
-    desc: Run static analysis
+  web:test:
+    desc: Run Vitest unit tests
+    dir: "{{.WEB_DIR}}"
     cmds:
-      - "{{.FLUTTER}} analyze"
+      - npm run test
 
-  generate:
-    desc: Run freezed / json_serializable code generation
-    aliases: [gen]
+  web:lint:
+    desc: ESLint for web app
+    dir: "{{.WEB_DIR}}"
     cmds:
-      - "{{.DART}} run build_runner build --delete-conflicting-outputs"
+      - npm run lint
 
-  run:
-    desc: Run app on a connected device (flutter run)
+  web:check:
+    desc: Lint, test, and build web app
     cmds:
-      - "{{.FLUTTER}} run"
+      - task: web:lint
+      - task: web:test
+      - task: web:build
 
-  format:
-    desc: Format Dart sources
+  supabase:start:
+    desc: Start local Supabase stack
     cmds:
-      - "{{.DART}} format lib test"
+      - supabase start
+
+  supabase:stop:
+    desc: Stop local Supabase stack
+    cmds:
+      - supabase stop
+
+  deploy:pages:
+    desc: Deploy web/dist to Cloudflare Pages
+    deps: [web:build]
+    cmds:
+      - npx wrangler pages deploy web/dist
 
   all:
-    desc: Full check — install, generate, analyze, test, and build
+    desc: Full web check (lint, test, build)
     cmds:
-      - task: install
-      - task: generate
-      - task: analyze
-      - task: test
-      - task: build
+      - task: web:check

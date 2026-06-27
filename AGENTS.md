@@ -4,43 +4,42 @@
 
 1. `.cursor/PLUGIN.md` — skill inheritance and layout
 2. `.cursor/skills/foundations/engineering/SKILL.md` — universal principles (always)
-3. `.cursor/skills/flutter/architecture/SKILL.md` — feature layers and routing
-4. `README.md` — setup and Firestore schema
+3. `README.md` — Supabase schema and setup
+4. `web/AGENTS.md` — Vite client layout and conventions
 
 ## Skill index
 
 | When | Skill |
 |---|---|
 | Any code change | `foundations/engineering` |
-| Features, repos, routes | `flutter/architecture` |
-| Providers, AsyncValue | `flutter/riverpod` |
-| Widgets, theme, layout | `flutter/ui` |
-| Motion, cards, transitions | `project/ui-interactions` |
+| React client, routes, hooks | `code/web/libs/react` + `code/web/ui` |
+| Postgres, RLS, Edge Functions | `project/platform/supabase` |
 | UX quality bar, menus, states | `project/ux` |
 | Planner / month calendar | `project/schedule` |
-| Firestore, rules, functions | `platform/firebase` |
-| FCM, local notifications | `platform/notifications` |
-| WSL, adb, flutter doctor | `platform/wsl-dev` |
-| README, dartdoc | `project/docs` |
+| README, public API docs | `project/docs` |
 | Update skills/rules | `meta/improvement-protocol` |
 
-Load `references/` only when a skill's table points you there — do not preload.
+Do **not** use `flutter/*` or `platform/firebase` for new work. Legacy code is in `legacy/`.
 
 ## Structure
 
-- `lib/core/` — theme, router, providers, utilities
-- `lib/features/` — feature modules (auth, shifts, dashboard, …)
-- `lib/shared/widgets/` — reusable UI components
+- `web/` — Vite + React PWA (primary client)
+- `supabase/` — Postgres migrations, RLS, Edge Functions
+- `legacy/flutter/` — retired Flutter app
+- `legacy/firebase/` — retired Firestore rules and Cloud Functions
 
 ## Commands
 
 ```bash
-task get      # flutter pub get
-task gen      # build_runner
-task test     # flutter test
-task analyze
+task web:install
+task web:dev
+task web:build
+task web:test
+task web:lint
+task supabase:start
+task deploy:pages
 ```
 
-## Phase order
+## Delivery phases
 
-Setup → models → data layer → auth → dashboard → calendar → shifts → family → notifications → Google Calendar → polish → tests.
+Supabase backend → web scaffold → auth → core features → calendar → planner → PWA + deploy → retire legacy.

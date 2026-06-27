@@ -12,6 +12,14 @@
 .swiftpm/
 migrate_working_dir/
 
+# Web
+web/node_modules/
+web/dist/
+
+# Supabase local
+supabase/.temp/
+supabase/.branches/
+
 # IntelliJ related
 *.iml
 *.ipr
