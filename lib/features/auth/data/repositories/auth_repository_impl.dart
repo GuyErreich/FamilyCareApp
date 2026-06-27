@@ -28,13 +28,14 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Stream<AppUser?> watchAuthState() {
-    return _firebaseAuth.authStateChanges().asyncMap((user) async {
-      if (user == null) return null;
-      try {
-        return await _ensureUserProfile(user);
-      } catch (_) {
-        return null;
+    return _firebaseAuth.authStateChanges().asyncExpand((firebaseUser) {
+      if (firebaseUser == null) {
+        return Stream.value(null);
       }
+
+      return _firestore.watchUser(firebaseUser.uid).asyncMap((user) async {
+        return user ?? await _ensureUserProfile(firebaseUser);
+      });
     });
   }
 

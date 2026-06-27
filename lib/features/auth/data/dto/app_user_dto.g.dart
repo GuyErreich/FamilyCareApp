@@ -19,6 +19,7 @@ _$AppUserDtoImpl _$$AppUserDtoImplFromJson(
       (json['fcmTokens'] as List<dynamic>?)?.map((e) => e as String).toList() ??
       const <String>[],
   googleCalendarConnected: json['googleCalendarConnected'] as bool? ?? false,
+  scheduleDaysShowed: (json['scheduleDaysShowed'] as num?)?.toInt() ?? 3,
   createdAt: const TimestampConverter().fromJson(json['createdAt'] as Object),
 );
 
@@ -32,5 +33,6 @@ Map<String, dynamic> _$$AppUserDtoImplToJson(_$AppUserDtoImpl instance) =>
       'avatarUrl': instance.avatarUrl,
       'fcmTokens': instance.fcmTokens,
       'googleCalendarConnected': instance.googleCalendarConnected,
+      'scheduleDaysShowed': instance.scheduleDaysShowed,
       'createdAt': const TimestampConverter().toJson(instance.createdAt),
     };

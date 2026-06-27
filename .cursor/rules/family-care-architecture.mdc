@@ -5,6 +5,10 @@ alwaysApply: true
 
 # Architecture
 
+See `.cursor/rules/foundations/engineering.mdc` for universal principles and `.cursor/rules/flutter/architecture.mdc` for Flutter layer rules.
+
+Quick reference:
+
 - Three layers per feature: presentation, domain, data.
 - Widgets render state and dispatch intents only.
 - Business rules live in domain use-cases.

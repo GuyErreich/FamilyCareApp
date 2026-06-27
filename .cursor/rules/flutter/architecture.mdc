@@ -1,0 +1,15 @@
+---
+description: Flutter clean architecture and feature-first layout
+globs: lib/**/*.dart
+alwaysApply: false
+---
+
+# Flutter Architecture
+
+- Three layers per feature: presentation, domain, data.
+- Widgets render state and dispatch intents only.
+- Business rules live in domain use-cases.
+- Repository interfaces in domain; implementations in data.
+- Shared UI in `lib/shared/widgets/`; core cross-cutting in `lib/core/`.
+
+Load `.cursor/skills/flutter/architecture/SKILL.md` and `.cursor/skills/flutter/riverpod/SKILL.md` when adding features or providers.

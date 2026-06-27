@@ -7,6 +7,10 @@ import 'package:family_care_scheduler/features/family/data/repositories/family_r
 import 'package:family_care_scheduler/features/family/domain/repositories/family_repository.dart';
 import 'package:family_care_scheduler/features/shifts/data/repositories/shift_repository_impl.dart';
 import 'package:family_care_scheduler/features/shifts/domain/repositories/shift_repository.dart';
+import 'package:family_care_scheduler/features/settings/data/repositories/family_settings_repository_impl.dart';
+import 'package:family_care_scheduler/features/settings/domain/repositories/family_settings_repository.dart';
+import 'package:family_care_scheduler/features/unavailability/data/repositories/unavailability_repository_impl.dart';
+import 'package:family_care_scheduler/features/unavailability/domain/repositories/unavailability_repository.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -36,4 +40,13 @@ final familyRepositoryProvider = Provider<FamilyRepository>(
 
 final shiftRepositoryProvider = Provider<ShiftRepository>(
   (ref) => ShiftRepositoryImpl(ref.watch(firestoreDataSourceProvider)),
+);
+
+final unavailabilityRepositoryProvider = Provider<UnavailabilityRepository>(
+  (ref) => UnavailabilityRepositoryImpl(ref.watch(firestoreDataSourceProvider)),
+);
+
+final familySettingsRepositoryProvider = Provider<FamilySettingsRepository>(
+  (ref) =>
+      FamilySettingsRepositoryImpl(ref.watch(firestoreDataSourceProvider)),
 );

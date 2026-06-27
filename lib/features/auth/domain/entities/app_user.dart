@@ -15,6 +15,7 @@ class AppUser with _$AppUser {
     String? avatarUrl,
     @Default(<String>[]) List<String> fcmTokens,
     @Default(false) bool googleCalendarConnected,
+    @Default(3) int scheduleDaysShowed,
     required DateTime createdAt,
   }) = _AppUser;
 }

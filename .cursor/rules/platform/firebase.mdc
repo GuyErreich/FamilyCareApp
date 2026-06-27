@@ -1,0 +1,13 @@
+---
+description: Firestore, security rules, and Cloud Functions
+globs: firestore.rules,firestore.indexes.json,functions/**,lib/**/data/**
+alwaysApply: false
+---
+
+# Firebase Platform
+
+- Collections scoped by `familyId`; rules in `firestore.rules` are authoritative.
+- Client overlap checks are UX-only; notification fan-out via Cloud Functions.
+- Deploy rules/indexes/functions together when schema or rules change.
+
+Load `.cursor/skills/platform/firebase/SKILL.md`; use `references/collections-and-rules.md` for rules changes.

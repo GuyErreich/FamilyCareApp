@@ -18,6 +18,14 @@
       ]
     },
     {
+      "collectionGroup": "unavailabilities",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "familyId", "order": "ASCENDING" },
+        { "fieldPath": "date", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "familyMembers",
       "queryScope": "COLLECTION",
       "fields": [

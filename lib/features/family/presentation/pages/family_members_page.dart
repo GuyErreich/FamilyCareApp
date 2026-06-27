@@ -1,7 +1,9 @@
 import 'package:family_care_scheduler/core/providers/repository_providers.dart';
 import 'package:family_care_scheduler/features/auth/presentation/providers/auth_providers.dart';
 import 'package:family_care_scheduler/features/family/domain/entities/family_member.dart';
+import 'package:family_care_scheduler/features/family/domain/family_member_role.dart';
 import 'package:family_care_scheduler/features/family/presentation/providers/family_providers.dart';
+import 'package:family_care_scheduler/shared/widgets/app_card.dart';
 import 'package:family_care_scheduler/shared/widgets/app_scaffold.dart';
 import 'package:family_care_scheduler/shared/widgets/member_avatar.dart';
 import 'package:flutter/material.dart';
@@ -19,6 +21,8 @@ class _FamilyMembersPageState extends ConsumerState<FamilyMembersPage> {
   @override
   Widget build(BuildContext context) {
     final membersAsync = ref.watch(familyMembersProvider);
+    final canManageRoles = ref.watch(canManageMemberRolesProvider);
+    final currentUser = ref.watch(authStateProvider).valueOrNull;
 
     return AppScaffold(
       title: 'Family',
@@ -33,17 +37,27 @@ class _FamilyMembersPageState extends ConsumerState<FamilyMembersPage> {
           separatorBuilder: (_, _) => const SizedBox(height: 8),
           itemBuilder: (context, index) {
             final member = members[index];
-            return Card(
+            return AppCard(
+              onTap: () => _showEditDialog(
+                context,
+                member,
+                canManageRoles: canManageRoles,
+                currentUserId: currentUser?.id,
+              ),
               child: ListTile(
                 leading: MemberAvatar(member: member),
                 title: Text(member.name),
-                subtitle: Text(member.phone ?? 'No phone'),
+                subtitle: Text(
+                  [
+                    FamilyMemberRole.label(member.role),
+                    if (member.phone != null) member.phone!,
+                  ].join(' · '),
+                ),
                 trailing: Icon(
                   Icons.circle,
                   color: _colorFromHex(member.colorHex),
                   size: 16,
                 ),
-                onTap: () => _showEditDialog(context, member),
               ),
             );
           },
@@ -109,37 +123,75 @@ class _FamilyMembersPageState extends ConsumerState<FamilyMembersPage> {
     await ref.read(familyRepositoryProvider).addMember(member);
   }
 
-  Future<void> _showEditDialog(BuildContext context, FamilyMember member) async {
+  Future<void> _showEditDialog(
+    BuildContext context,
+    FamilyMember member, {
+    required bool canManageRoles,
+    required String? currentUserId,
+  }) async {
     final nameController = TextEditingController(text: member.name);
     final phoneController = TextEditingController(text: member.phone ?? '');
+    var role = member.role;
 
     final saved = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Edit member'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(labelText: 'Name'),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Edit member'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(labelText: 'Name'),
+              ),
+              TextField(
+                controller: phoneController,
+                decoration: const InputDecoration(labelText: 'Phone'),
+              ),
+              if (canManageRoles &&
+                  member.role != FamilyMemberRole.owner &&
+                  member.userId != currentUserId) ...[
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: role,
+                  decoration: const InputDecoration(labelText: 'Role'),
+                  items: FamilyMemberRole.assignableRoles
+                      .map(
+                        (value) => DropdownMenuItem(
+                          value: value,
+                          child: Text(FamilyMemberRole.label(value)),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    if (value == null) return;
+                    setDialogState(() => role = value);
+                  },
+                ),
+              ] else if (member.role != FamilyMemberRole.member) ...[
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Role: ${FamilyMemberRole.label(member.role)}',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ),
+              ],
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
             ),
-            TextField(
-              controller: phoneController,
-              decoration: const InputDecoration(labelText: 'Phone'),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Save'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Save'),
-          ),
-        ],
       ),
     );
 
@@ -151,6 +203,11 @@ class _FamilyMembersPageState extends ConsumerState<FamilyMembersPage> {
             phone: phoneController.text.trim().isEmpty
                 ? null
                 : phoneController.text.trim(),
+            role: canManageRoles &&
+                    member.role != FamilyMemberRole.owner &&
+                    member.userId != currentUserId
+                ? role
+                : member.role,
           ),
         );
   }

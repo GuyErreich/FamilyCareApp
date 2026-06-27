@@ -1,0 +1,13 @@
+---
+description: Schedule calendar and planner visual contract
+globs: lib/features/schedule/**/*.dart,lib/features/calendar/**/*.dart
+alwaysApply: false
+---
+
+# Schedule & Calendar
+
+- Style through `schedule_calendar_style.dart` and `planner_slot_painters.dart` only.
+- Hour-band zebra rows, visible grid lines, column dividers — no checkerboard day columns.
+- Full-bleed planner; wrap via `FamilySchedulePlanner` / `FamilyScheduleMonth`.
+
+Load `.cursor/skills/project/schedule/SKILL.md` before changing planner or month grid behavior.

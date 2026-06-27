@@ -1,5 +1,9 @@
+import 'package:family_care_scheduler/core/errors/result.dart';
+import 'package:family_care_scheduler/core/providers/google_sign_in_provider.dart';
 import 'package:family_care_scheduler/core/providers/repository_providers.dart';
 import 'package:family_care_scheduler/core/utils/date_time_utils.dart';
+import 'package:family_care_scheduler/features/auth/presentation/providers/auth_providers.dart';
+import 'package:family_care_scheduler/features/family/domain/family_member_role.dart';
 import 'package:family_care_scheduler/features/family/presentation/providers/family_providers.dart';
 import 'package:family_care_scheduler/features/google_calendar/domain/google_calendar_service.dart';
 import 'package:family_care_scheduler/features/notifications/domain/local_notification_service.dart';
@@ -56,14 +60,56 @@ class _ShiftDetailsPageState extends ConsumerState<ShiftDetailsPage> {
     await _load();
   }
 
-  Future<void> _delete() async {
+  Future<void> _removeShift() async {
     final shift = _shift!;
     if (shift.calendarEventId != null) {
-      await ref.read(googleCalendarServiceProvider).deleteEvent(shift.calendarEventId!);
+      final deleteResult = await ref
+          .read(googleCalendarServiceProvider)
+          .deleteEvent(shift.calendarEventId!);
+      if (!mounted) return;
+      if (deleteResult is Error<void>) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Shift removed, but calendar event could not be deleted: '
+              '${deleteResult.failure.message}',
+            ),
+          ),
+        );
+      }
     }
     await ref.read(localNotificationServiceProvider).cancelShiftReminders(shift.id);
     await ref.read(shiftRepositoryProvider).deleteShift(shift.id);
     if (mounted) context.pop();
+  }
+
+  Future<void> _delete() => _removeShift();
+
+  Future<void> _cantMakeIt() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Can\'t make this shift?'),
+        content: const Text(
+          'Your shift will be opened for coverage. The family backup '
+          'list will be notified so someone else can step in. Any linked '
+          'Google Calendar event will be removed.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Keep shift'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Release shift'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+    await _removeShift();
   }
 
   @override
@@ -86,8 +132,27 @@ class _ShiftDetailsPageState extends ConsumerState<ShiftDetailsPage> {
 
     final shift = _shift!;
     final members = ref.watch(familyMembersProvider).valueOrNull ?? [];
+    final user = ref.watch(authStateProvider).valueOrNull;
+    final canManage = FamilyMemberRole.canManageShift(
+      shift: shift,
+      userId: user?.id,
+      members: members,
+    );
+    final isAssignee = FamilyMemberRole.isShiftAssignedToUser(
+      shift: shift,
+      userId: user?.id,
+      members: members,
+    );
+    final canRelease = isAssignee &&
+        shift.status == ShiftStatus.scheduled &&
+        !shift.isInPast;
+    final calendarEmail = ref.watch(googleSignInProvider).currentUser?.email;
     final member = members
-        .where((m) => m.userId == shift.assignedUserId)
+        .where(
+          (m) =>
+              m.userId == shift.assignedUserId ||
+              m.id == shift.assignedUserId,
+        )
         .firstOrNull;
 
     return AppScaffold(
@@ -123,11 +188,23 @@ class _ShiftDetailsPageState extends ConsumerState<ShiftDetailsPage> {
               _DetailRow(label: 'Notes', value: shift.notes!),
             _DetailRow(
               label: 'Calendar',
-              value: shift.calendarEventId != null ? 'Synced' : 'Not synced',
+              value: shift.calendarEventId != null
+                  ? calendarEmail == null
+                      ? 'Synced'
+                      : 'Synced to $calendarEmail'
+                  : 'Not synced',
             ),
             _DetailRow(label: 'Status', value: shift.status.name),
             const Spacer(),
-            if (shift.status == ShiftStatus.scheduled) ...[
+            if (canRelease) ...[
+              PrimaryButton(
+                label: 'Can\'t make it',
+                icon: Icons.event_busy,
+                onPressed: _cantMakeIt,
+              ),
+              const SizedBox(height: 12),
+            ],
+            if (canManage && shift.status == ShiftStatus.scheduled) ...[
               PrimaryButton(
                 label: 'Mark completed',
                 icon: Icons.check_circle,
@@ -135,18 +212,26 @@ class _ShiftDetailsPageState extends ConsumerState<ShiftDetailsPage> {
               ),
               const SizedBox(height: 12),
               OutlinedButton(
-                onPressed: () => context.push('/shifts/${shift.id}/edit'),
+                onPressed: () async {
+                  final updated =
+                      await context.push<Shift>('/shifts/${shift.id}/edit');
+                  if (!mounted) return;
+                  if (updated != null) {
+                    setState(() => _shift = updated);
+                  }
+                },
                 child: const Text('Edit'),
               ),
               const SizedBox(height: 12),
             ],
-            TextButton(
-              onPressed: _delete,
-              child: Text(
-                'Delete shift',
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
+            if (canManage)
+              TextButton(
+                onPressed: _delete,
+                child: Text(
+                  'Delete shift',
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
               ),
-            ),
           ],
         ),
       ),

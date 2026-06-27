@@ -1,0 +1,17 @@
+---
+description: Universal engineering principles for all code work in Family Care Scheduler
+alwaysApply: true
+---
+
+# Engineering Foundations
+
+Before writing or reviewing code:
+
+- Reuse before creating; extract when the same pattern appears twice.
+- Explicit types at boundaries; types document intent.
+- Name by responsibility; use project suffixes (`*_page.dart`, `*_provider.dart`, …).
+- Place code by feature layer; shared vs feature-local obvious from path.
+- Separate data, orchestration, presentation, and I/O.
+- Couple what changes together; decouple what changes for different reasons.
+
+Load `.cursor/skills/foundations/engineering/SKILL.md` for decisions; load `references/` only when a principle needs deep guidance. Downstream rules must not repeat these bullets — they reference this foundation.

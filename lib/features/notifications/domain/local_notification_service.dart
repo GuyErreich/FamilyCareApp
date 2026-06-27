@@ -1,9 +1,9 @@
+import 'package:family_care_scheduler/core/utils/calendar_timezone.dart';
 import 'package:family_care_scheduler/core/utils/date_time_utils.dart';
 import 'package:family_care_scheduler/features/shifts/domain/entities/shift.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 
 final localNotificationServiceProvider = Provider<LocalNotificationService>(
@@ -19,7 +19,7 @@ class LocalNotificationService {
 
   Future<void> initialize() async {
     if (_initialized) return;
-    tz.initializeTimeZones();
+    await CalendarTimezone.localTimeZoneName();
 
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
     const ios = DarwinInitializationSettings();

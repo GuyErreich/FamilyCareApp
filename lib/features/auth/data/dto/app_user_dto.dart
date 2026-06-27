@@ -17,6 +17,7 @@ class AppUserDto with _$AppUserDto {
     String? avatarUrl,
     @Default(<String>[]) List<String> fcmTokens,
     @Default(false) bool googleCalendarConnected,
+    @Default(3) int scheduleDaysShowed,
     @TimestampConverter() required DateTime createdAt,
   }) = _AppUserDto;
 
@@ -35,6 +36,7 @@ extension AppUserDtoX on AppUserDto {
         avatarUrl: avatarUrl,
         fcmTokens: fcmTokens,
         googleCalendarConnected: googleCalendarConnected,
+        scheduleDaysShowed: scheduleDaysShowed,
         createdAt: createdAt,
       );
 
@@ -47,6 +49,7 @@ extension AppUserDtoX on AppUserDto {
         avatarUrl: user.avatarUrl,
         fcmTokens: user.fcmTokens,
         googleCalendarConnected: user.googleCalendarConnected,
+        scheduleDaysShowed: user.scheduleDaysShowed,
         createdAt: user.createdAt,
       );
 }

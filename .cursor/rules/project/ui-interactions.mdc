@@ -1,0 +1,13 @@
+---
+description: Tactile UI — motion, transitions, press feedback
+globs: lib/**/presentation/**/*.dart,lib/shared/widgets/**/*.dart,lib/core/theme/**/*.dart,lib/core/router/**/*.dart
+alwaysApply: false
+---
+
+# UI Interactions
+
+- Motion from `AppMotion`; routes from `page_transitions.dart`.
+- Interactive surfaces use rounded theme shapes; `AppCard` for tappable cards.
+- Confirm bars slide up with spring curve; page pushes use fade+slide.
+
+Load `.cursor/skills/project/ui-interactions/SKILL.md` when adding buttons, cards, navigation, or animations.

@@ -8,6 +8,7 @@ abstract final class AppRoutes {
   static const String daySchedule = '/calendar/day';
   static const String family = '/family';
   static const String settings = '/settings';
+  static const String coverageFallback = '/settings/coverage-fallback';
   static const String createShift = '/shifts/create';
   static const String shiftDetails = '/shifts/:id';
   static const String editShift = '/shifts/:id/edit';

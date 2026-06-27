@@ -18,6 +18,9 @@ class PrimaryButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return FilledButton.icon(
       onPressed: isLoading ? null : onPressed,
+      style: FilledButton.styleFrom(
+        minimumSize: const Size.fromHeight(48),
+      ),
       icon: isLoading
           ? const SizedBox(
               width: 18,

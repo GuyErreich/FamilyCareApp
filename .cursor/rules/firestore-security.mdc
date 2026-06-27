@@ -10,3 +10,5 @@ alwaysApply: false
 - `familyId` on writes must match the caller's family.
 - Never trust client-side overlap validation as authoritative.
 - Deploy rules before testing multi-user flows.
+
+Load `.cursor/skills/platform/firebase/SKILL.md` and `references/collections-and-rules.md` for rules changes.

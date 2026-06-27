@@ -8,6 +8,10 @@ import 'package:family_care_scheduler/features/family/domain/entities/family.dar
 import 'package:family_care_scheduler/features/family/domain/entities/family_member.dart';
 import 'package:family_care_scheduler/features/shifts/data/dto/shift_dto.dart';
 import 'package:family_care_scheduler/features/shifts/domain/entities/shift.dart';
+import 'package:family_care_scheduler/features/settings/data/dto/family_settings_dto.dart';
+import 'package:family_care_scheduler/features/settings/domain/entities/family_settings.dart';
+import 'package:family_care_scheduler/features/unavailability/data/dto/unavailability_dto.dart';
+import 'package:family_care_scheduler/features/unavailability/domain/entities/unavailability.dart';
 
 /// Low-level Firestore access for app collections.
 class FirestoreDataSource {
@@ -26,6 +30,12 @@ class FirestoreDataSource {
 
   CollectionReference<Map<String, dynamic>> get _shifts =>
       _firestore.collection(FirestoreCollections.shifts);
+
+  CollectionReference<Map<String, dynamic>> get _unavailabilities =>
+      _firestore.collection(FirestoreCollections.unavailabilities);
+
+  CollectionReference<Map<String, dynamic>> get _settings =>
+      _firestore.collection(FirestoreCollections.settings);
 
   Future<void> setUser(String id, AppUserDto dto) =>
       _users.doc(id).set(dto.toJson());
@@ -140,4 +150,48 @@ class FirestoreDataSource {
       _shifts.doc(id).update(dto.toJson());
 
   Future<void> deleteShift(String id) => _shifts.doc(id).delete();
+
+  Stream<List<Unavailability>> watchUnavailabilitiesForRange({
+    required String familyId,
+    required DateTime start,
+    required DateTime end,
+  }) {
+    return _unavailabilities
+        .where('familyId', isEqualTo: familyId)
+        .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(start))
+        .where('date', isLessThanOrEqualTo: Timestamp.fromDate(end))
+        .snapshots()
+        .map(
+          (snapshot) => snapshot.docs
+              .map(
+                (doc) =>
+                    UnavailabilityDto.fromJson(doc.data()).toDomain(doc.id),
+              )
+              .toList(),
+        );
+  }
+
+  Future<Unavailability> createUnavailability(UnavailabilityDto dto) async {
+    final ref = await _unavailabilities.add(dto.toJson());
+    return dto.toDomain(ref.id);
+  }
+
+  Future<void> deleteUnavailability(String id) =>
+      _unavailabilities.doc(id).delete();
+
+  Stream<FamilySettings> watchFamilySettings(String familyId) {
+    return _settings.doc(familyId).snapshots().map((doc) {
+      if (!doc.exists || doc.data() == null) {
+        return FamilySettings(
+          familyId: familyId,
+          updatedAt: DateTime.fromMillisecondsSinceEpoch(0),
+        );
+      }
+      return FamilySettingsDto.fromJson(doc.data()!)
+          .toDomain(familyId);
+    });
+  }
+
+  Future<void> setFamilySettings(String familyId, FamilySettingsDto dto) =>
+      _settings.doc(familyId).set(dto.toJson(), SetOptions(merge: true));
 }

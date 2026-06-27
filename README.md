@@ -91,8 +91,9 @@ Each feature has `data/`, `domain/`, and `presentation/` layers.
 | `users` | App user profiles linked to a family |
 | `familyMembers` | Members who can be assigned shifts |
 | `shifts` | Companion shift schedule |
+| `unavailabilities` | App-only companion unavailability blocks |
 | `notifications` | In-app notification records |
-| `settings` | Per-user or per-family preferences |
+| `settings` | Per-user or per-family preferences (incl. coverage fallback order) |
 
 ## Commands
 

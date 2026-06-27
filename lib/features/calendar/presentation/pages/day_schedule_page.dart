@@ -1,3 +1,4 @@
+import 'package:family_care_scheduler/core/errors/result.dart';
 import 'package:family_care_scheduler/core/providers/repository_providers.dart';
 import 'package:family_care_scheduler/core/utils/date_time_utils.dart';
 import 'package:family_care_scheduler/features/auth/presentation/providers/auth_providers.dart';
@@ -7,6 +8,7 @@ import 'package:family_care_scheduler/features/schedule/presentation/family_sche
 import 'package:family_care_scheduler/features/schedule/presentation/schedule_actions.dart';
 import 'package:family_care_scheduler/features/schedule/presentation/schedule_slot_confirm_bar.dart';
 import 'package:family_care_scheduler/features/shifts/domain/entities/shift.dart';
+import 'package:family_care_scheduler/features/unavailability/presentation/providers/unavailability_providers.dart';
 import 'package:family_care_scheduler/shared/widgets/app_scaffold.dart';
 import 'package:family_care_scheduler/shared/widgets/async_value_widget.dart';
 import 'package:flutter/material.dart';
@@ -30,8 +32,10 @@ class _DaySchedulePageState extends ConsumerState<DaySchedulePage> {
   Widget build(BuildContext context) {
     final day = DateTimeUtils.dateOnly(widget.day);
     final shiftsAsync = ref.watch(dayShiftsProvider(day));
+    final blocksAsync = ref.watch(dayUnavailabilitiesProvider(day));
     final members = ref.watch(familyMembersProvider).valueOrNull ?? [];
     final user = ref.watch(authStateProvider).valueOrNull;
+    final canManageOthers = ref.watch(canManageFamilyShiftsProvider);
 
     return AppScaffold(
       title: DateTimeUtils.formatDate(day),
@@ -53,32 +57,73 @@ class _DaySchedulePageState extends ConsumerState<DaySchedulePage> {
           Expanded(
             child: AsyncValueWidget(
               value: shiftsAsync,
-              data: (shifts) => FamilySchedulePlanner(
-                shifts: shifts,
-                members: members,
-                daysShowed: 1,
-                initialDate: day,
-                currentUserId: user?.id,
-                enableSlotSelection: user != null,
-                onShiftTap: (shift) => context.push('/shifts/${shift.id}'),
-                onSlotSelected: user == null
-                    ? null
-                    : (slot) => setState(() => _selection = slot),
+              data: (shifts) => AsyncValueWidget(
+                value: blocksAsync,
+                data: (blocks) => FamilySchedulePlanner(
+                  shifts: shifts,
+                  unavailabilities: blocks,
+                  members: members,
+                  daysShowed: 1,
+                  initialDate: day,
+                  currentUserId: user?.id,
+                  enableSlotSelection: user != null,
+                  onShiftTap: (shift) => context.push('/shifts/${shift.id}'),
+                  onUnavailabilityTap: user == null
+                      ? null
+                      : (block) => showUnavailabilityActions(
+                            context,
+                            ref,
+                            block: block,
+                            currentUserId: user.id,
+                            canManageOthers: canManageOthers,
+                          ),
+                  onSlotSelected: user == null
+                      ? null
+                      : (slot) => setState(() => _selection = slot),
+                ),
               ),
             ),
           ),
           if (_selection != null && user != null)
             ScheduleSlotConfirmBar(
               selection: _selection!,
+              members: members,
+              currentUserId: user.id,
+              canManageOthers: canManageOthers,
               onClear: () => setState(() => _selection = null),
-              onConfirm: () {
+              onConfirmShift: (assigneeId) {
                 final slot = _selection!;
                 setState(() => _selection = null);
                 openCreateShiftForSlot(
                   context,
                   selection: slot,
-                  userId: user.id,
+                  userId: assigneeId,
                 );
+              },
+              onConfirmUnavailable: (userId) async {
+                final slot = _selection!;
+                final familyId = user.familyId;
+                if (familyId == null) return;
+
+                final result = await saveUnavailabilityForSlot(
+                  ref,
+                  selection: slot,
+                  userId: userId,
+                  familyId: familyId,
+                );
+                if (!mounted) return;
+
+                setState(() => _selection = null);
+                switch (result) {
+                  case Success():
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Unavailability saved')),
+                    );
+                  case Error(:final failure):
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(failure.message)),
+                    );
+                }
               },
             ),
         ],

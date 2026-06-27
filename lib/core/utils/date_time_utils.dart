@@ -13,6 +13,9 @@ abstract final class DateTimeUtils {
 
   static String formatDate(DateTime date) => DateFormat.yMMMd().format(date);
 
+  static String formatMonthYear(DateTime date) =>
+      DateFormat.yMMMM().format(DateTime(date.year, date.month));
+
   /// 24-hour clock, e.g. `14:30`.
   static String formatTime(DateTime dateTime) => DateFormat('HH:mm').format(dateTime);
 

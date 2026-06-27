@@ -7,6 +7,7 @@ enum NotificationType {
   shiftCreated,
   shiftUpdated,
   shiftCancelled,
+  shiftNeedsCoverage,
   companionChanged,
   reminder,
 }

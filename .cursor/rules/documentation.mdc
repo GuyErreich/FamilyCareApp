@@ -1,5 +1,5 @@
 ---
-description: Documentation standards for Family Care Scheduler
+description: Documentation workflow for Family Care Scheduler
 alwaysApply: true
 ---
 
@@ -8,5 +8,7 @@ alwaysApply: true
 - Update README when project structure or setup changes.
 - Public API gets brief dartdoc; private code does not.
 - No comment noise; names and structure carry meaning.
-- Phase completion includes a doc pass (see family-care-docs skill).
+- Phase completion includes a doc pass (see `project/docs` skill).
 - Code explains itself first — refactor instead of commenting.
+
+Load `.cursor/skills/project/docs/SKILL.md` when completing a phase or adding public API.

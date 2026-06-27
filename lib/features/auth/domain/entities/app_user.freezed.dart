@@ -26,6 +26,7 @@ mixin _$AppUser {
   String? get avatarUrl => throw _privateConstructorUsedError;
   List<String> get fcmTokens => throw _privateConstructorUsedError;
   bool get googleCalendarConnected => throw _privateConstructorUsedError;
+  int get scheduleDaysShowed => throw _privateConstructorUsedError;
   DateTime get createdAt => throw _privateConstructorUsedError;
 
   /// Create a copy of AppUser
@@ -49,6 +50,7 @@ abstract class $AppUserCopyWith<$Res> {
     String? avatarUrl,
     List<String> fcmTokens,
     bool googleCalendarConnected,
+    int scheduleDaysShowed,
     DateTime createdAt,
   });
 }
@@ -77,6 +79,7 @@ class _$AppUserCopyWithImpl<$Res, $Val extends AppUser>
     Object? avatarUrl = freezed,
     Object? fcmTokens = null,
     Object? googleCalendarConnected = null,
+    Object? scheduleDaysShowed = null,
     Object? createdAt = null,
   }) {
     return _then(
@@ -117,6 +120,10 @@ class _$AppUserCopyWithImpl<$Res, $Val extends AppUser>
                 ? _value.googleCalendarConnected
                 : googleCalendarConnected // ignore: cast_nullable_to_non_nullable
                       as bool,
+            scheduleDaysShowed: null == scheduleDaysShowed
+                ? _value.scheduleDaysShowed
+                : scheduleDaysShowed // ignore: cast_nullable_to_non_nullable
+                      as int,
             createdAt: null == createdAt
                 ? _value.createdAt
                 : createdAt // ignore: cast_nullable_to_non_nullable
@@ -145,6 +152,7 @@ abstract class _$$AppUserImplCopyWith<$Res> implements $AppUserCopyWith<$Res> {
     String? avatarUrl,
     List<String> fcmTokens,
     bool googleCalendarConnected,
+    int scheduleDaysShowed,
     DateTime createdAt,
   });
 }
@@ -172,6 +180,7 @@ class __$$AppUserImplCopyWithImpl<$Res>
     Object? avatarUrl = freezed,
     Object? fcmTokens = null,
     Object? googleCalendarConnected = null,
+    Object? scheduleDaysShowed = null,
     Object? createdAt = null,
   }) {
     return _then(
@@ -212,6 +221,10 @@ class __$$AppUserImplCopyWithImpl<$Res>
             ? _value.googleCalendarConnected
             : googleCalendarConnected // ignore: cast_nullable_to_non_nullable
                   as bool,
+        scheduleDaysShowed: null == scheduleDaysShowed
+            ? _value.scheduleDaysShowed
+            : scheduleDaysShowed // ignore: cast_nullable_to_non_nullable
+                  as int,
         createdAt: null == createdAt
             ? _value.createdAt
             : createdAt // ignore: cast_nullable_to_non_nullable
@@ -234,6 +247,7 @@ class _$AppUserImpl implements _AppUser {
     this.avatarUrl,
     final List<String> fcmTokens = const <String>[],
     this.googleCalendarConnected = false,
+    this.scheduleDaysShowed = 3,
     required this.createdAt,
   }) : _fcmTokens = fcmTokens;
 
@@ -265,11 +279,14 @@ class _$AppUserImpl implements _AppUser {
   @JsonKey()
   final bool googleCalendarConnected;
   @override
+  @JsonKey()
+  final int scheduleDaysShowed;
+  @override
   final DateTime createdAt;
 
   @override
   String toString() {
-    return 'AppUser(id: $id, email: $email, displayName: $displayName, familyId: $familyId, phone: $phone, colorHex: $colorHex, avatarUrl: $avatarUrl, fcmTokens: $fcmTokens, googleCalendarConnected: $googleCalendarConnected, createdAt: $createdAt)';
+    return 'AppUser(id: $id, email: $email, displayName: $displayName, familyId: $familyId, phone: $phone, colorHex: $colorHex, avatarUrl: $avatarUrl, fcmTokens: $fcmTokens, googleCalendarConnected: $googleCalendarConnected, scheduleDaysShowed: $scheduleDaysShowed, createdAt: $createdAt)';
   }
 
   @override
@@ -297,6 +314,8 @@ class _$AppUserImpl implements _AppUser {
                   googleCalendarConnected,
                 ) ||
                 other.googleCalendarConnected == googleCalendarConnected) &&
+            (identical(other.scheduleDaysShowed, scheduleDaysShowed) ||
+                other.scheduleDaysShowed == scheduleDaysShowed) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt));
   }
@@ -313,6 +332,7 @@ class _$AppUserImpl implements _AppUser {
     avatarUrl,
     const DeepCollectionEquality().hash(_fcmTokens),
     googleCalendarConnected,
+    scheduleDaysShowed,
     createdAt,
   );
 
@@ -336,6 +356,7 @@ abstract class _AppUser implements AppUser {
     final String? avatarUrl,
     final List<String> fcmTokens,
     final bool googleCalendarConnected,
+    final int scheduleDaysShowed,
     required final DateTime createdAt,
   }) = _$AppUserImpl;
 
@@ -357,6 +378,8 @@ abstract class _AppUser implements AppUser {
   List<String> get fcmTokens;
   @override
   bool get googleCalendarConnected;
+  @override
+  int get scheduleDaysShowed;
   @override
   DateTime get createdAt;
 
