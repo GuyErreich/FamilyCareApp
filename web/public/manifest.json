@@ -1,0 +1,17 @@
+{
+  "name": "Family Care Scheduler",
+  "short_name": "FamilyCare",
+  "description": "Coordinate family companion shifts with scheduling and reminders.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4f6f0",
+  "theme_color": "#4a6741",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
