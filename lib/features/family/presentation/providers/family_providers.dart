@@ -21,3 +21,16 @@ final weekShiftsProvider =
         end: end,
       );
 });
+
+final monthShiftsProvider =
+    StreamProvider.family<List<Shift>, DateTime>((ref, month) {
+  final user = ref.watch(authStateProvider).valueOrNull;
+  if (user?.familyId == null) return const Stream.empty();
+  final start = DateTime(month.year, month.month);
+  final end = DateTime(month.year, month.month + 1, 0);
+  return ref.watch(shiftRepositoryProvider).watchShiftsForRange(
+        familyId: user!.familyId!,
+        start: start,
+        end: end,
+      );
+});

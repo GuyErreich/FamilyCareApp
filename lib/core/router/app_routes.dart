@@ -5,6 +5,7 @@ abstract final class AppRoutes {
   static const String onboarding = '/onboarding';
   static const String dashboard = '/dashboard';
   static const String calendar = '/calendar';
+  static const String daySchedule = '/calendar/day';
   static const String family = '/family';
   static const String settings = '/settings';
   static const String createShift = '/shifts/create';

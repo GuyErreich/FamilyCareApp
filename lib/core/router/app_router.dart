@@ -5,6 +5,7 @@ import 'package:family_care_scheduler/features/auth/presentation/pages/onboardin
 import 'package:family_care_scheduler/features/auth/presentation/pages/register_page.dart';
 import 'package:family_care_scheduler/features/auth/presentation/providers/auth_providers.dart';
 import 'package:family_care_scheduler/features/calendar/presentation/pages/calendar_page.dart';
+import 'package:family_care_scheduler/features/calendar/presentation/pages/day_schedule_page.dart';
 import 'package:family_care_scheduler/features/dashboard/presentation/pages/dashboard_page.dart';
 import 'package:family_care_scheduler/features/family/presentation/pages/family_members_page.dart';
 import 'package:family_care_scheduler/features/settings/presentation/pages/settings_page.dart';
@@ -94,12 +95,24 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
       GoRoute(
+        path: AppRoutes.daySchedule,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return DaySchedulePage(
+            day: extra?['day'] as DateTime? ?? DateTime.now(),
+          );
+        },
+      ),
+      GoRoute(
         path: AppRoutes.createShift,
         builder: (context, state) {
           final extra = state.extra as Map<String, dynamic>?;
           return CreateShiftPage(
             initialDate: extra?['date'] as DateTime?,
             initialUserId: extra?['userId'] as String?,
+            initialStartHour: extra?['startHour'] as int?,
+            initialStartMinute: extra?['startMinute'] as int?,
+            initialDurationMinutes: extra?['durationMinutes'] as int?,
           );
         },
       ),
