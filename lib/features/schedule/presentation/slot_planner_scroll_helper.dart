@@ -1,6 +1,6 @@
+import 'package:family_care_scheduler/features/schedule/presentation/planner/planner_scroll_scope.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:infinite_calendar_view/infinite_calendar_view.dart';
 
 /// Resolves slot drag/resize gestures before parent scroll views claim them.
 class EagerVerticalDragGestureRecognizer extends VerticalDragGestureRecognizer {
@@ -26,40 +26,31 @@ class EagerPanGestureRecognizer extends PanGestureRecognizer {
 
 /// Scroll helpers used while moving or resizing a slot selection.
 abstract final class SlotPlannerScrollHelper {
-  static EventsPlannerState? plannerOf(BuildContext context) =>
-      context.findAncestorStateOfType<EventsPlannerState>();
+  static PlannerScrollScope? scopeOf(BuildContext context) {
+    return PlannerScrollScope.maybeOf(context);
+  }
 
   /// Keeps the timeline following the finger when dragging near viewport edges.
-  static void autoScroll(EventsPlannerState planner, Offset globalPosition) {
-    final renderBox = planner.context.findRenderObject() as RenderBox?;
+  static void autoScroll(
+    BuildContext context,
+    PlannerScrollScope scope,
+    Offset globalPosition,
+  ) {
+    final renderBox = context.findRenderObject() as RenderBox?;
     if (renderBox == null) return;
 
     final local = renderBox.globalToLocal(globalPosition);
-    final horizontal = planner.mainHorizontalController;
-    final vertical = planner.mainVerticalController;
+    final vertical = scope.verticalController;
 
-    if (local.dx > planner.width * 0.88) {
-      horizontal.jumpTo(
-        (horizontal.offset + 24).clamp(0.0, horizontal.position.maxScrollExtent),
-      );
-    } else if (local.dx < planner.width * 0.12) {
-      horizontal.jumpTo(
-        (horizontal.offset - 24).clamp(0.0, horizontal.position.maxScrollExtent),
-      );
-    }
+    final maxOffset = vertical.position.maxScrollExtent;
 
-    final minVertical = planner.widget.minVerticalScrollOffset ?? 0.0;
-    final maxVertical = planner.widget.maxVerticalScrollOffset ??
-        vertical.position.maxScrollExtent;
-    final maxOffset = maxVertical.clamp(0.0, vertical.position.maxScrollExtent);
-
-    if (local.dy > planner.height * 0.88) {
+    if (local.dy > scope.viewportHeight * 0.88) {
       vertical.jumpTo(
-        (vertical.offset + 20).clamp(minVertical, maxOffset),
+        (vertical.offset + 20).clamp(0.0, maxOffset),
       );
-    } else if (local.dy < planner.height * 0.12) {
+    } else if (local.dy < scope.viewportHeight * 0.12) {
       vertical.jumpTo(
-        (vertical.offset - 20).clamp(minVertical, maxOffset),
+        (vertical.offset - 20).clamp(0.0, maxOffset),
       );
     }
   }
@@ -72,13 +63,4 @@ abstract final class SlotPlannerScrollHelper {
   }) =>
       (globalPosition.dy - dragOriginGlobal.dy) +
       (currentScrollY - dragOriginScrollY);
-
-  static double scrollAdjustedDx({
-    required Offset globalPosition,
-    required Offset dragOriginGlobal,
-    required double dragOriginScrollX,
-    required double currentScrollX,
-  }) =>
-      (globalPosition.dx - dragOriginGlobal.dx) +
-      (currentScrollX - dragOriginScrollX);
 }

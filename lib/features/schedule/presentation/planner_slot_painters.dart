@@ -78,7 +78,7 @@ class PlannerTimeGutterBackgroundPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     canvas.drawRect(
       Offset.zero & size,
-      Paint()..color = scheme.surfaceContainerLow,
+      Paint()..color = scheme.surfaceContainerLow.withValues(alpha: 0.65),
     );
 
     const snap = ScheduleConstants.snapMinutes;

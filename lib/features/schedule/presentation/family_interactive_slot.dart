@@ -1,19 +1,20 @@
+import 'package:family_care_scheduler/features/schedule/domain/planner_slot_selection.dart';
 import 'package:family_care_scheduler/features/schedule/domain/schedule_constants.dart';
 import 'package:family_care_scheduler/features/schedule/domain/slot_overlap_resolver.dart';
+import 'package:family_care_scheduler/features/schedule/presentation/planner/planner_scroll_scope.dart';
 import 'package:family_care_scheduler/features/schedule/presentation/slot_move_session.dart';
 import 'package:family_care_scheduler/features/schedule/presentation/slot_planner_scroll_helper.dart';
 import 'package:family_care_scheduler/features/shifts/domain/entities/shift.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:infinite_calendar_view/infinite_calendar_view.dart';
 
 typedef SlotChangedCallback = void Function(
-  SlotSelection? slot, {
+  PlannerSlotSelection? slot, {
   required bool isDragging,
   required bool hasConflict,
 });
 
-/// Draggable, resizable slot selection without the library's tap-to-dismiss behavior.
+/// Draggable, resizable slot selection on the planner grid.
 class FamilyInteractiveSlot extends StatefulWidget {
   const FamilyInteractiveSlot({
     required this.slot,
@@ -26,20 +27,21 @@ class FamilyInteractiveSlot extends StatefulWidget {
     super.key,
   });
 
-  final SlotSelection slot;
+  final PlannerSlotSelection slot;
   final double dayWidth;
   final double heightPerMinute;
   final List<Shift> shifts;
   final SlotChangedCallback onChanged;
   final ValueChanged<bool>? onConflictChanged;
-  final Widget Function(SlotSelection slot, {required bool hasConflict}) content;
+  final Widget Function(PlannerSlotSelection slot, {required bool hasConflict})
+      content;
 
   @override
   State<FamilyInteractiveSlot> createState() => _FamilyInteractiveSlotState();
 }
 
 class _FamilyInteractiveSlotState extends State<FamilyInteractiveSlot> {
-  EventsPlannerState? _planner;
+  PlannerScrollScope? _scope;
   Offset? _dragOriginGlobal;
   double _dragOriginScrollY = 0;
 
@@ -178,17 +180,17 @@ class _FamilyInteractiveSlotState extends State<FamilyInteractiveSlot> {
     final pointer = _pendingPointer;
     if (pointer == null || SlotMoveSession.isActive) return;
 
-    final planner = SlotPlannerScrollHelper.plannerOf(context);
-    if (planner == null) return;
+    final scope = SlotPlannerScrollHelper.scopeOf(context);
+    if (scope == null) return;
 
     SlotMoveSession.start(
       pointer: pointer,
       drag: SlotDragContext(
-        planner: planner,
+        context: context,
+        scope: scope,
         dragStartAnchor: widget.slot.startDateTime,
         initialGlobal: globalPosition,
-        initialScrollY: planner.mainVerticalController.offset,
-        initialScrollX: planner.mainHorizontalController.offset,
+        initialScrollY: scope.verticalController.offset,
         dayWidth: widget.dayWidth,
         heightPerMinute: widget.heightPerMinute,
         durationMinutes: widget.slot.durationInMinutes,
@@ -214,32 +216,31 @@ class _FamilyInteractiveSlotState extends State<FamilyInteractiveSlot> {
       EagerVerticalDragGestureRecognizer.new,
       (instance) {
         instance.onStart = (details) {
-          _planner = SlotPlannerScrollHelper.plannerOf(context);
+          _scope = SlotPlannerScrollHelper.scopeOf(context);
           _topResizeStart = widget.slot.startDateTime;
-          _topResizeEnd = widget.slot.startDateTime
-              .add(Duration(minutes: widget.slot.durationInMinutes));
+          _topResizeEnd = widget.slot.endDateTime;
           _dragOriginGlobal = details.globalPosition;
-          _dragOriginScrollY = _planner?.mainVerticalController.offset ?? 0;
+          _dragOriginScrollY = _scope?.verticalController.offset ?? 0;
         };
         instance.onUpdate = (details) {
-          final planner = _planner;
+          final scope = _scope;
           final resizeStart = _topResizeStart;
           final resizeEnd = _topResizeEnd;
           final origin = _dragOriginGlobal;
-          if (planner == null ||
+          if (scope == null ||
               resizeStart == null ||
               resizeEnd == null ||
               origin == null) {
             return;
           }
 
-          SlotPlannerScrollHelper.autoScroll(planner, details.globalPosition);
+          SlotPlannerScrollHelper.autoScroll(context, scope, details.globalPosition);
 
           final dy = SlotPlannerScrollHelper.scrollAdjustedDy(
             globalPosition: details.globalPosition,
             dragOriginGlobal: origin,
             dragOriginScrollY: _dragOriginScrollY,
-            currentScrollY: planner.mainVerticalController.offset,
+            currentScrollY: scope.verticalController.offset,
           );
 
           const snap = ScheduleConstants.snapMinutes;
@@ -291,26 +292,26 @@ class _FamilyInteractiveSlotState extends State<FamilyInteractiveSlot> {
       EagerVerticalDragGestureRecognizer.new,
       (instance) {
         instance.onStart = (details) {
-          _planner = SlotPlannerScrollHelper.plannerOf(context);
+          _scope = SlotPlannerScrollHelper.scopeOf(context);
           _bottomResizeDuration = widget.slot.durationInMinutes;
           _dragOriginGlobal = details.globalPosition;
-          _dragOriginScrollY = _planner?.mainVerticalController.offset ?? 0;
+          _dragOriginScrollY = _scope?.verticalController.offset ?? 0;
         };
         instance.onUpdate = (details) {
-          final planner = _planner;
+          final scope = _scope;
           final originDuration = _bottomResizeDuration;
           final origin = _dragOriginGlobal;
-          if (planner == null || originDuration == null || origin == null) {
+          if (scope == null || originDuration == null || origin == null) {
             return;
           }
 
-          SlotPlannerScrollHelper.autoScroll(planner, details.globalPosition);
+          SlotPlannerScrollHelper.autoScroll(context, scope, details.globalPosition);
 
           final dy = SlotPlannerScrollHelper.scrollAdjustedDy(
             globalPosition: details.globalPosition,
             dragOriginGlobal: origin,
             dragOriginScrollY: _dragOriginScrollY,
-            currentScrollY: planner.mainVerticalController.offset,
+            currentScrollY: scope.verticalController.offset,
           );
 
           const snap = ScheduleConstants.snapMinutes;
@@ -369,11 +370,9 @@ class _FamilyInteractiveSlotState extends State<FamilyInteractiveSlot> {
     }
 
     widget.onChanged(
-      SlotSelection(
-        widget.slot.columnIndex,
-        widget.slot.initialStartDateTime,
-        start,
-        duration,
+      widget.slot.copyWith(
+        startDateTime: start,
+        durationInMinutes: duration,
       ),
       isDragging: isDragging,
       hasConflict: hasConflict,
@@ -384,7 +383,7 @@ class _FamilyInteractiveSlotState extends State<FamilyInteractiveSlot> {
     _topResizeStart = null;
     _topResizeEnd = null;
     _dragOriginGlobal = null;
-    _planner = null;
+    _scope = null;
     if (mounted) {
       setState(() => _hasConflict = false);
     }
@@ -393,7 +392,7 @@ class _FamilyInteractiveSlotState extends State<FamilyInteractiveSlot> {
   void _clearResizeBottom() {
     _bottomResizeDuration = null;
     _dragOriginGlobal = null;
-    _planner = null;
+    _scope = null;
     if (mounted) {
       setState(() => _hasConflict = false);
     }

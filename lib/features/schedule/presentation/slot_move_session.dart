@@ -1,25 +1,21 @@
+import 'package:family_care_scheduler/features/schedule/domain/planner_slot_selection.dart';
 import 'package:family_care_scheduler/features/schedule/domain/schedule_constants.dart';
 import 'package:family_care_scheduler/features/schedule/domain/slot_overlap_resolver.dart';
+import 'package:family_care_scheduler/features/schedule/presentation/family_interactive_slot.dart';
+import 'package:family_care_scheduler/features/schedule/presentation/planner/planner_scroll_scope.dart';
 import 'package:family_care_scheduler/features/schedule/presentation/slot_planner_scroll_helper.dart';
 import 'package:family_care_scheduler/features/shifts/domain/entities/shift.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:infinite_calendar_view/infinite_calendar_view.dart';
 
-typedef SlotChangedCallback = void Function(
-  SlotSelection? slot, {
-  required bool isDragging,
-  required bool hasConflict,
-});
-
-/// Drag state that outlives [FamilyInteractiveSlot] rebuilds across days.
+/// Drag state that outlives [FamilyInteractiveSlot] rebuilds.
 final class SlotDragContext {
   SlotDragContext({
-    required this.planner,
+    required this.context,
+    required this.scope,
     required this.dragStartAnchor,
     required this.initialGlobal,
     required this.initialScrollY,
-    required this.initialScrollX,
     required this.dayWidth,
     required this.heightPerMinute,
     required this.durationMinutes,
@@ -30,11 +26,11 @@ final class SlotDragContext {
     required this.onConflictChanged,
   });
 
-  final EventsPlannerState planner;
+  final BuildContext context;
+  final PlannerScrollScope scope;
   final DateTime dragStartAnchor;
   final Offset initialGlobal;
   final double initialScrollY;
-  final double initialScrollX;
   final double dayWidth;
   final double heightPerMinute;
   final int durationMinutes;
@@ -45,21 +41,15 @@ final class SlotDragContext {
   final ValueChanged<bool> onConflictChanged;
 
   void move(Offset globalPosition, {required bool isDragging}) {
-    SlotPlannerScrollHelper.autoScroll(planner, globalPosition);
+    SlotPlannerScrollHelper.autoScroll(context, scope, globalPosition);
 
-    final scrollY = planner.mainVerticalController.offset;
-    final scrollX = planner.mainHorizontalController.offset;
-
+    final scrollY = scope.verticalController.offset;
     final dy = (globalPosition.dy - initialGlobal.dy) + (scrollY - initialScrollY);
-    final dx = (globalPosition.dx - initialGlobal.dx) + (scrollX - initialScrollX);
 
     const snap = ScheduleConstants.snapMinutes;
     final minutesDelta = snap * (dy / heightPerMinute / snap).round();
-    final daysDelta = (dx / dayWidth).round();
     final rawStart = ScheduleConstants.snapToGrid(
-      dragStartAnchor.add(
-        Duration(days: daysDelta, minutes: minutesDelta),
-      ),
+      dragStartAnchor.add(Duration(minutes: minutesDelta)),
     );
 
     final placement = isDragging
@@ -76,11 +66,11 @@ final class SlotDragContext {
 
     onConflictChanged(placement.hasConflict);
     onChanged(
-      SlotSelection(
-        columnIndex,
-        initialStartDateTime,
-        placement.start,
-        placement.durationMinutes,
+      PlannerSlotSelection(
+        columnIndex: columnIndex,
+        initialStartDateTime: initialStartDateTime,
+        startDateTime: placement.start,
+        durationInMinutes: placement.durationMinutes,
       ),
       isDragging: isDragging,
       hasConflict: placement.hasConflict,
