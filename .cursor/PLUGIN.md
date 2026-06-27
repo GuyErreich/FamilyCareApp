@@ -25,7 +25,7 @@ foundations/engineering
        └─ flutter/ui
             └─ project/ui-interactions
             └─ project/ux
-            └─ project/schedule (calendar + infinite_calendar_view)
+            └─ project/schedule (first-party calendar + planner)
 platform/{firebase,notifications,wsl-dev}  # extends engineering; no weakening
 project/docs
 ```

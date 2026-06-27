@@ -23,6 +23,8 @@ Bands span full hour height (4 × 15-minute slots), not individual 15-minute cel
 
 `ScheduleMonthWeek` — bordered rounded day cells (`monthDayCellBorder`), uniform base fill, today highlight via border + tint. No alternating column colors.
 
+`ScheduleMonthGrid` — six-week grid; outside-month days use `isOutsideMonth` tint.
+
 ## Scroll safety
 
-`calendar_page` uses double `addPostFrameCallback` before `jumpToDate` — preserve when changing navigation to avoid scroll controller assertions.
+`calendar_page` uses `addPostFrameCallback` before `jumpToDate` on owned `ScrollController`s.

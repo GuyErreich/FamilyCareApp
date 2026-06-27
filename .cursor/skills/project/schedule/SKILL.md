@@ -1,6 +1,6 @@
 ---
 name: schedule-calendar
-description: Family Care schedule and calendar UI — infinite_calendar_view wrappers, planner grid, hour bands, slot selection, and month grid. Use when editing calendar, schedule, planner, or day timeline views. Extends flutter-ui.
+description: Family Care schedule and calendar UI — first-party planner and month grid, hour bands, slot selection. Use when editing calendar, schedule, planner, or day timeline views. Extends flutter-ui.
 disable-model-invocation: true
 ---
 
@@ -10,22 +10,22 @@ disable-model-invocation: true
 
 Load `foundations/engineering`, `flutter/architecture`, and `flutter/ui` first.
 
-## Package boundary
-
-`infinite_calendar_view` is wrapped by:
+## Widget boundary
 
 | Widget | Role |
 |---|---|
-| `FamilySchedulePlanner` | Day/week planner, slot selection, events |
-| `FamilyScheduleMonth` | Month grid with shift chips |
+| `FamilySchedulePlanner` | Thin wrapper → `SchedulePlannerView` |
+| `FamilyScheduleMonth` | Thin wrapper → `ScheduleMonthGrid` |
+| `SchedulePlannerView` | Day/week timeline (`presentation/planner/`) |
+| `ScheduleMonthGrid` | Six-week month grid (`presentation/month/`) |
 
-Feature pages (`calendar_page`, `dashboard_page`, `day_schedule_page`) use these wrappers — **do not** import `infinite_calendar_view` directly in feature pages.
+Feature pages (`calendar_page`, `dashboard_page`, `day_schedule_page`) use the `Family*` wrappers only.
 
 ## Visual contract
 
 All planner/month styling flows through:
 
-- `schedule_calendar_style.dart` — tokens, frame, colors
+- `schedule_calendar_style.dart` — tokens, frame, colors, `MonthGridMetrics`
 - `planner_slot_painters.dart` — hour bands, grid lines, gutters, column dividers
 
 ### Do
@@ -46,7 +46,9 @@ All planner/month styling flows through:
 
 - Slot snap: `ScheduleConstants.snapMinutes` (15)
 - Selection UI: `FamilyInteractiveSlot` + `ScheduleSlotConfirmBar`
-- Overlap: `SlotOverlapResolver` (client UX); conflicts clear selection when not dragging
+- Overlap layout: `TimelineLayoutEngine` (greedy columns)
+- Overlap conflicts: `SlotOverlapResolver`; conflicts clear selection when not dragging
+- Scroll during drag: `PlannerScrollScope` + `SlotPlannerScrollHelper`
 
 ## Constants
 

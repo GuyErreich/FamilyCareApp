@@ -7,7 +7,7 @@
 ## Flutter-specific
 
 - Presentation depends on domain interfaces and Riverpod providers — not on `FirebaseFirestore` directly.
-- `infinite_calendar_view` stays behind `FamilySchedulePlanner` / `FamilyScheduleMonth` — feature pages do not import the package.
+- Schedule UI stays behind `FamilySchedulePlanner` / `FamilyScheduleMonth` — feature pages do not import planner internals.
 - Theme tokens live in `AppTheme` / `AppMotion` — widgets read `Theme.of(context)`, not hardcoded colors.
 
 When two features need the same data, share a provider in domain or `core/providers/`, not a cross-feature widget import.
