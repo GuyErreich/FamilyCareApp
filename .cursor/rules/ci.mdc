@@ -1,0 +1,10 @@
+---
+description: CI workflow standards
+globs: .github/**
+alwaysApply: false
+---
+
+# CI
+
+- Run `flutter analyze`, `flutter test`, and `dart format --set-exit-if-changed .`
+- Fail PRs on analyzer errors or test failures.

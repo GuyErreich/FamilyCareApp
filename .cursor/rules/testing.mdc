@@ -1,0 +1,12 @@
+---
+description: Flutter test conventions
+globs: test/**/*.dart
+alwaysApply: false
+---
+
+# Testing
+
+- Use `mocktail` for mocks, `fake_cloud_firestore` for repository tests.
+- Unit test use-cases and pure utilities.
+- Widget tests cover forms and validation messages.
+- Run `flutter test` before opening PRs.

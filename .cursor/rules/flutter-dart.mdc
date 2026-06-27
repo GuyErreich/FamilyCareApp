@@ -1,0 +1,13 @@
+---
+description: Dart and Flutter coding conventions
+globs: lib/**/*.dart
+alwaysApply: false
+---
+
+# Flutter / Dart
+
+- Use Riverpod; avoid `setState` except in local animation state.
+- Prefer `const` constructors where possible.
+- Freezed for immutable domain entities and DTOs.
+- Extract widgets when build methods exceed ~80 lines.
+- Use `AsyncValue` pattern for loading/error/data states.

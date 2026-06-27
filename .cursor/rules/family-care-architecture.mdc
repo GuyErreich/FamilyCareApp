@@ -1,0 +1,13 @@
+---
+description: Clean architecture and feature-first layout for Family Care Scheduler
+alwaysApply: true
+---
+
+# Architecture
+
+- Three layers per feature: presentation, domain, data.
+- Widgets render state and dispatch intents only.
+- Business rules live in domain use-cases.
+- Repository pattern with interfaces in domain, impls in data.
+- Shared UI in `lib/shared/widgets/`.
+- Core cross-cutting concerns in `lib/core/`.

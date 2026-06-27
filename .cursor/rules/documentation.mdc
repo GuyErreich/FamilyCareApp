@@ -1,0 +1,12 @@
+---
+description: Documentation standards for Family Care Scheduler
+alwaysApply: true
+---
+
+# Documentation
+
+- Update README when project structure or setup changes.
+- Public API gets brief dartdoc; private code does not.
+- No comment noise; names and structure carry meaning.
+- Phase completion includes a doc pass (see family-care-docs skill).
+- Code explains itself first — refactor instead of commenting.

@@ -1,0 +1,52 @@
+version: '3'
+
+vars:
+  FLUTTER: flutter
+  DART: dart
+
+tasks:
+  install:
+    desc: Install dependencies (flutter pub get)
+    cmds:
+      - "{{.FLUTTER}} pub get"
+
+  build:
+    desc: Build Android debug APK
+    cmds:
+      - "{{.FLUTTER}} build apk --debug"
+
+  test:
+    desc: Run all tests
+    cmds:
+      - "{{.FLUTTER}} test"
+
+  analyze:
+    desc: Run static analysis
+    cmds:
+      - "{{.FLUTTER}} analyze"
+
+  generate:
+    desc: Run freezed / json_serializable code generation
+    cmds:
+      - "{{.DART}} run build_runner build --delete-conflicting-outputs"
+
+  run:
+    desc: Run app on a connected device (flutter run)
+    cmds:
+      - "{{.FLUTTER}} run"
+
+  format:
+    desc: Format Dart sources
+    cmds:
+      - "{{.DART}} format lib test"
+
+  # Short aliases
+  get:
+    desc: Alias for install
+    cmds:
+      - task: install
+
+  gen:
+    desc: Alias for generate
+    cmds:
+      - task: generate
