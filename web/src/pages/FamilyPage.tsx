@@ -1,8 +1,13 @@
 import type { FormEvent } from "react";
 import { useState } from "react";
+import { Users } from "lucide-react";
+import { Button } from "../components/ui/common/Button";
 import { Card } from "../components/ui/common/Card";
-import { PrimaryButton } from "../components/ui/common/PrimaryButton";
+import { FormStack } from "../components/ui/common/FormStack";
+import { MemberAvatar } from "../components/ui/common/MemberAvatar";
+import { Stack } from "../components/ui/common/Stack";
 import { EmptyState, ErrorState, LoadingState } from "../components/ui/common/AsyncStates";
+import { TextInput } from "../components/ui/common/TextField";
 import { useFamilyMembers } from "../hooks/family/useFamilyData";
 import { useAddFamilyMember } from "../hooks/shifts/useShiftMutations";
 
@@ -23,40 +28,55 @@ export function FamilyPage() {
     }
   };
 
-  if (membersQuery.isLoading) return <LoadingState />;
+  if (membersQuery.isLoading) return <LoadingState label="Loading family…" />;
   if (membersQuery.error) return <ErrorState message={membersQuery.error.message} />;
 
   const members = membersQuery.data ?? [];
 
   return (
-    <div className="stack">
-      <h1 className="page-title">Family members</h1>
+    <Stack gap="lg">
+      <p className="muted page-subline">
+        {members.length} companion{members.length === 1 ? "" : "s"}
+      </p>
+
       {members.length === 0 ? (
-        <EmptyState>No members yet.</EmptyState>
+        <EmptyState icon={Users} title="No members yet">
+          Add your first companion below.
+        </EmptyState>
       ) : (
-        members.map((member) => (
-          <Card
-            key={member.id}
-            className="shift-chip"
-            style={{ ["--chip-color" as string]: member.color_hex }}
-          >
-            <strong>{member.name}</strong>
-            <div className="muted">{member.role}</div>
-          </Card>
-        ))
+        <div className="family-grid stack--stagger">
+          {members.map((member) => (
+            <Card
+              key={member.id}
+              className="shift-chip"
+              style={{ ["--chip-color" as string]: member.color_hex }}
+            >
+              <div className="shift-card">
+                <MemberAvatar name={member.name} colorHex={member.color_hex} size="lg" />
+                <div className="shift-card__body">
+                  <div className="shift-card__name">{member.name}</div>
+                  <div className="shift-card__time">{member.role}</div>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
       )}
-      <Card>
-        <form className="stack" onSubmit={onSubmit}>
-          <label className="field">
-            Add companion
-            <input value={name} onChange={(e) => setName(e.target.value)} required />
-          </label>
+
+      <Card variant="accent">
+        <FormStack gap="lg" onSubmit={onSubmit}>
+          <TextInput
+            label="Add companion"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+          />
           {error ? <ErrorState message={error} /> : null}
-          <PrimaryButton type="submit" disabled={addMember.isPending}>
+          <Button type="submit" fullWidth loading={addMember.isPending} disabled={addMember.isPending}>
             Add member
-          </PrimaryButton>
-        </form>
+          </Button>
+        </FormStack>
       </Card>
-    </div>
+    </Stack>
   );
 }

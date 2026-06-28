@@ -1,33 +1,33 @@
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { Bell, ChevronRight, CalendarOff } from "lucide-react";
 import { Card } from "../components/ui/common/Card";
-import { PrimaryButton } from "../components/ui/common/PrimaryButton";
+import { Stack } from "../components/ui/common/Stack";
+import { MemberAvatar } from "../components/ui/common/MemberAvatar";
 import { EmptyState, ErrorState, LoadingState } from "../components/ui/common/AsyncStates";
 import { ROUTES } from "../lib/constants";
 import { formatError } from "../lib/errors";
 import { formatShiftRange, toDateKey } from "../lib/dates";
 import {
-  useFamily,
   useFamilyMembers,
   useNotifications,
   useShifts,
 } from "../hooks/family/useFamilyData";
 
 export function DashboardPage() {
+  const navigate = useNavigate();
   const today = toDateKey(new Date());
   const shiftsQuery = useShifts(today, today);
   const membersQuery = useFamilyMembers();
-  const familyQuery = useFamily();
   const notificationsQuery = useNotifications();
 
-  if (shiftsQuery.isLoading || membersQuery.isLoading || familyQuery.isLoading) {
-    return <LoadingState />;
+  if (shiftsQuery.isLoading || membersQuery.isLoading) {
+    return <LoadingState label="Loading today’s schedule…" />;
   }
 
-  if (shiftsQuery.error || membersQuery.error || familyQuery.error) {
+  if (shiftsQuery.error || membersQuery.error) {
     const message = [
       shiftsQuery.error && formatError(shiftsQuery.error),
       membersQuery.error && formatError(membersQuery.error),
-      familyQuery.error && formatError(familyQuery.error),
     ]
       .filter(Boolean)
       .join(" · ");
@@ -37,49 +37,75 @@ export function DashboardPage() {
   const membersById = new Map((membersQuery.data ?? []).map((m) => [m.id, m]));
   const shifts = shiftsQuery.data ?? [];
   const unread = (notificationsQuery.data ?? []).filter((n) => !n.read).length;
-  const family = familyQuery.data;
+  const todayLabel = new Date().toLocaleDateString(undefined, {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
 
   return (
-    <div className="stack">
-      <h1 className="page-title">
-        Today · {family?.grandpa_name ?? "Family care"}
-      </h1>
+    <Stack gap="lg" stagger>
+      <p className="muted page-subline">{todayLabel}</p>
 
       {unread > 0 ? (
-        <Card>
-          <strong>{unread} new notification{unread === 1 ? "" : "s"}</strong>
+        <Card
+          variant="accent"
+          interactive
+          onClick={() => navigate(ROUTES.settings)}
+          className="notification-banner-card"
+        >
+          <div className="notification-banner">
+            <span className="notification-banner__icon">
+              <Bell size={22} aria-hidden />
+            </span>
+            <span className="notification-banner__text">
+              {unread} new notification{unread === 1 ? "" : "s"}
+            </span>
+            <span className="badge">{unread}</span>
+            <ChevronRight className="notification-banner__chevron" size={20} aria-hidden />
+          </div>
         </Card>
       ) : null}
 
       {shifts.length === 0 ? (
-        <EmptyState>No companion shifts scheduled for today.</EmptyState>
+        <EmptyState
+          icon={CalendarOff}
+          title="No shifts today"
+        >
+          Tap + to schedule a companion shift.
+        </EmptyState>
       ) : (
-        shifts.map((shift) => {
-          const member = membersById.get(shift.assigned_member_id);
-          return (
-            <Card
-              key={shift.id}
-              className="shift-chip"
-              style={{ ["--chip-color" as string]: member?.color_hex }}
-            >
-              <strong>{member?.name ?? "Companion"}</strong>
-              <div className="muted">
-                {formatShiftRange(
-                  shift.shift_date,
-                  shift.start_hour,
-                  shift.start_minute,
-                  shift.duration_minutes,
-                )}
-              </div>
-              <Link to={ROUTES.shiftEdit(shift.id)}>Edit</Link>
-            </Card>
-          );
-        })
+        <Stack stagger>
+          {shifts.map((shift) => {
+            const member = membersById.get(shift.assigned_member_id);
+            return (
+              <Card
+                key={shift.id}
+                interactive
+                className="shift-chip"
+                style={{ ["--chip-color" as string]: member?.color_hex }}
+                onClick={() => navigate(ROUTES.shiftEdit(shift.id))}
+              >
+                <div className="shift-card">
+                  <MemberAvatar name={member?.name ?? "Companion"} colorHex={member?.color_hex} />
+                  <div className="shift-card__body">
+                    <div className="shift-card__name">{member?.name ?? "Companion"}</div>
+                    <div className="shift-card__time">
+                      {formatShiftRange(
+                        shift.shift_date,
+                        shift.start_hour,
+                        shift.start_minute,
+                        shift.duration_minutes,
+                      )}
+                    </div>
+                  </div>
+                  <ChevronRight className="shift-card__chevron" size={20} aria-hidden />
+                </div>
+              </Card>
+            );
+          })}
+        </Stack>
       )}
-
-      <Link to={ROUTES.shiftNew} style={{ textDecoration: "none" }}>
-        <PrimaryButton style={{ width: "100%" }}>Add shift</PrimaryButton>
-      </Link>
-    </div>
+    </Stack>
   );
 }

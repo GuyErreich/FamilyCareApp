@@ -315,5 +315,6 @@ export type Family = Tables<"families">;
 export type Profile = Tables<"profiles">;
 export type FamilyMember = Tables<"family_members">;
 export type Shift = Tables<"shifts">;
+export type Unavailability = Tables<"unavailabilities">;
 export type AppNotification = Tables<"notifications">;
 export type FamilySettings = Tables<"family_settings">;

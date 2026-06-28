@@ -2,8 +2,13 @@ import type { FormEvent } from "react";
 import { useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { ErrorState, LoadingState } from "../components/ui/common/AsyncStates";
+import { Button } from "../components/ui/common/Button";
 import { Card } from "../components/ui/common/Card";
-import { PrimaryButton } from "../components/ui/common/PrimaryButton";
+import { FormActionBar } from "../components/ui/common/FormActionBar";
+import { FormPage } from "../components/ui/common/FormPage";
+import { FormStack } from "../components/ui/common/FormStack";
+import { MemberChipPicker } from "../components/ui/common/MemberChipPicker";
+import { TextArea, TextInput } from "../components/ui/common/TextField";
 import { useGoogleCalendar } from "../hooks/calendar/useGoogleCalendar";
 import {
   useFamily,
@@ -69,7 +74,7 @@ function ShiftFormFields({
   const deleteShift = useDeleteShift();
   const calendar = useGoogleCalendar();
 
-  const defaultMember = useMemo(() => members[0]?.id ?? "", [members]);
+  const defaultMember = useMemo(() => members?.[0]?.id ?? "", [members]);
   const [assignedMemberId, setAssignedMemberId] = useState(
     initialValues.assignedMemberId || defaultMember,
   );
@@ -134,46 +139,28 @@ function ShiftFormFields({
   };
 
   return (
-    <Card>
-      <h1 className="page-title">{shiftId ? "Edit shift" : "New shift"}</h1>
-      <form className="stack" onSubmit={onSubmit}>
-        <label className="field">
-          Companion
-          <select
-            value={memberId}
-            onChange={(e) => setAssignedMemberId(e.target.value)}
-            required
-          >
-            {members.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="field">
-          Date
-          <input
+    <FormPage>
+      <Card>
+        <FormStack gap="lg" id="shift-form" onSubmit={onSubmit}>
+          <MemberChipPicker members={members} value={memberId} onChange={setAssignedMemberId} />
+          <TextInput
+            label="Date"
             type="date"
             value={shiftDate}
             onChange={(e) => setShiftDate(e.target.value)}
             required
           />
-        </label>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          <label className="field">
-            Start hour
-            <input
+          <div className="form-grid-2">
+            <TextInput
+              label="Start hour"
               type="number"
               min={0}
               max={23}
               value={startHour}
               onChange={(e) => setStartHour(Number(e.target.value))}
             />
-          </label>
-          <label className="field">
-            Start minute
-            <input
+            <TextInput
+              label="Start minute"
               type="number"
               min={0}
               max={59}
@@ -181,50 +168,62 @@ function ShiftFormFields({
               value={startMinute}
               onChange={(e) => setStartMinute(Number(e.target.value))}
             />
-          </label>
-        </div>
-        <label className="field">
-          Duration (minutes)
-          <input
+          </div>
+          <TextInput
+            label="Duration (minutes)"
             type="number"
             min={15}
             step={15}
             value={duration}
             onChange={(e) => setDuration(Number(e.target.value))}
           />
-        </label>
-        <label className="field">
-          Notes
-          <textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
-        </label>
-        {calendarConnected ? (
-          <label className="field" style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-            <input
-              type="checkbox"
-              checked={syncToCalendar}
-              onChange={(e) => setSyncToCalendar(e.target.checked)}
-            />
-            Sync to Google Calendar when saved
-          </label>
-        ) : (
-          <p className="muted">Connect Google Calendar in Settings to sync shifts.</p>
-        )}
-        {error ? <ErrorState message={error} /> : null}
-        <PrimaryButton type="submit" disabled={saveShift.isPending}>
-          {saveShift.isPending ? "Saving…" : "Save shift"}
-        </PrimaryButton>
+          <TextArea
+            label="Notes"
+            rows={3}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+          />
+          {calendarConnected ? (
+            <label className="field field--inline">
+              <input
+                type="checkbox"
+                checked={syncToCalendar}
+                onChange={(e) => setSyncToCalendar(e.target.checked)}
+              />
+              <span className="field__label field__label--inline">
+                Sync to Google Calendar when saved
+              </span>
+            </label>
+          ) : (
+            <p className="muted">Connect Google Calendar in Settings to sync shifts.</p>
+          )}
+          {error ? <ErrorState message={error} /> : null}
+        </FormStack>
+      </Card>
+
+      <FormActionBar>
+        <Button variant="secondary" onClick={() => navigate(ROUTES.calendar)}>
+          Cancel
+        </Button>
         {shiftId ? (
-          <PrimaryButton
-            type="button"
-            variant="secondary"
+          <Button
+            variant="danger"
             disabled={deleteShift.isPending}
             onClick={() => void onDelete()}
           >
-            Delete shift
-          </PrimaryButton>
+            Delete
+          </Button>
         ) : null}
-      </form>
-    </Card>
+        <Button
+          type="submit"
+          form="shift-form"
+          loading={saveShift.isPending}
+          disabled={saveShift.isPending}
+        >
+          Save shift
+        </Button>
+      </FormActionBar>
+    </FormPage>
   );
 }
 
@@ -236,7 +235,7 @@ export function ShiftFormPage({ shiftId }: { shiftId?: string }) {
   const calendar = useGoogleCalendar();
 
   if (membersQuery.isLoading || (shiftId && shiftQuery.isLoading)) {
-    return <LoadingState />;
+    return <LoadingState label="Loading shift…" />;
   }
 
   if (shiftQuery.error) {

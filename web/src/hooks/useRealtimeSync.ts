@@ -25,6 +25,18 @@ export function useRealtimeSync() {
           void queryClient.invalidateQueries({ queryKey: ["shifts"] });
         },
       )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "unavailabilities",
+          filter: `family_id=eq.${familyId}`,
+        },
+        () => {
+          void queryClient.invalidateQueries({ queryKey: ["unavailabilities"] });
+        },
+      )
       .subscribe();
 
     return () => {

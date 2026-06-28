@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import { Download, X } from "lucide-react";
 import { Card } from "./Card";
-import { PrimaryButton } from "./PrimaryButton";
+import { Button } from "./Button";
+import { IconButton } from "./IconButton";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -14,7 +16,8 @@ function isIos(): boolean {
 function isStandalone(): boolean {
   return (
     window.matchMedia("(display-mode: standalone)").matches ||
-    ("standalone" in navigator && (navigator as Navigator & { standalone?: boolean }).standalone === true)
+    ("standalone" in navigator &&
+      (navigator as Navigator & { standalone?: boolean }).standalone === true)
   );
 }
 
@@ -50,26 +53,29 @@ export function InstallPrompt() {
   };
 
   return (
-    <Card className="install-prompt">
-      <strong>Install the app</strong>
+    <Card className="install-prompt" variant="accent">
+      <div className="install-prompt__header">
+        <span className="install-prompt__icon">
+          <Download size={22} aria-hidden />
+        </span>
+        <strong>Install the app</strong>
+        <IconButton icon={X} label="Dismiss install prompt" variant="ghost" onClick={dismiss} />
+      </div>
       {isIos() || !deferredPrompt ? (
         <p className="muted">
-          On iPhone: open in Safari, tap Share, then Add to Home Screen. Push
-          notifications work from the home screen icon (iOS 16.4+).
+          On iPhone: open in Safari, tap Share, then Add to Home Screen. Push notifications work
+          from the home screen icon (iOS 16.4+).
         </p>
       ) : (
         <p className="muted">
           Install for quick access and shift alerts on your lock screen.
         </p>
       )}
-      <div className="stack" style={{ flexDirection: "row", gap: 8 }}>
-        {deferredPrompt ? (
-          <PrimaryButton onClick={() => void install()}>Install</PrimaryButton>
-        ) : null}
-        <PrimaryButton variant="secondary" onClick={dismiss}>
-          Not now
-        </PrimaryButton>
-      </div>
+      {deferredPrompt ? (
+        <Button icon={Download} onClick={() => void install()}>
+          Install
+        </Button>
+      ) : null}
     </Card>
   );
 }

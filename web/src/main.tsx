@@ -4,9 +4,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import { AuthProvider } from "./hooks/auth/useAuth";
+import { bootstrapThemePalette } from "./hooks/useThemePalette";
 import "./styles/base.css";
 
 const queryClient = new QueryClient();
+
+bootstrapThemePalette();
 
 if ("serviceWorker" in navigator && import.meta.env.PROD) {
   void navigator.serviceWorker.register("/sw.js");

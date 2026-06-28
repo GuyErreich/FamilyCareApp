@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { Family, FamilyMember, FamilySettings, Shift } from "../../lib/database.types";
+import type { Family, FamilyMember, FamilySettings, Shift, Unavailability } from "../../lib/database.types";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../auth/useAuth";
 
@@ -120,6 +120,35 @@ export function useShifts(fromDate?: string, toDate?: string) {
       return data ?? [];
     },
   });
+}
+
+export function useUnavailabilities(fromDate?: string, toDate?: string) {
+  const { profile } = useAuth();
+  const familyId = profile?.family_id ?? null;
+
+  return useQuery({
+    queryKey: ["unavailabilities", familyId, fromDate, toDate],
+    enabled: Boolean(familyId),
+    queryFn: async (): Promise<Unavailability[]> => {
+      let query = supabase
+        .from("unavailabilities")
+        .select("*")
+        .eq("family_id", familyId!)
+        .order("block_date")
+        .order("start_hour")
+        .order("start_minute");
+      if (fromDate) query = query.gte("block_date", fromDate);
+      if (toDate) query = query.lte("block_date", toDate);
+      const { data, error } = await query;
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+export function useCurrentMember(members: FamilyMember[] | undefined) {
+  const { user } = useAuth();
+  return members?.find((m) => m.user_id === user?.id) ?? members?.[0] ?? null;
 }
 
 export function useNotifications() {

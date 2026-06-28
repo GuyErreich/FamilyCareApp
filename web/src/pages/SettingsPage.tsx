@@ -1,6 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
+import {
+  Bell,
+  Calendar,
+  ChevronDown,
+  ChevronUp,
+  Copy,
+  KeyRound,
+  LogOut,
+  User,
+  Users,
+} from "lucide-react";
+import { Button } from "../components/ui/common/Button";
 import { Card } from "../components/ui/common/Card";
-import { PrimaryButton } from "../components/ui/common/PrimaryButton";
+import { ListRow } from "../components/ui/common/ListRow";
+import { IconButton } from "../components/ui/common/IconButton";
+import { Stack } from "../components/ui/common/Stack";
+import { ThemePicker } from "../components/ui/common/ThemePicker";
 import { ErrorState, LoadingState } from "../components/ui/common/AsyncStates";
 import { useAuth } from "../hooks/auth/useAuth";
 import { useGoogleCalendar } from "../hooks/calendar/useGoogleCalendar";
@@ -23,6 +38,7 @@ export function SettingsPage() {
   const calendar = useGoogleCalendar();
   const [message, setMessage] = useState<string | null>(null);
   const [calendarError, setCalendarError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const orderedIds = useMemo(
     () => settingsQuery.data?.coverage_fallback_member_ids ?? [],
@@ -41,11 +57,7 @@ export function SettingsPage() {
         setCalendarError(formatError(err));
       });
     }
-  }, [
-    session?.provider_token,
-    profile?.google_calendar_connected,
-    calendar.markConnected,
-  ]);
+  }, [session?.provider_token, profile?.google_calendar_connected, calendar.markConnected]);
 
   const move = async (index: number, direction: -1 | 1) => {
     const next = [...orderedIds];
@@ -79,113 +91,141 @@ export function SettingsPage() {
     }
   };
 
+  const copyInviteCode = async () => {
+    const code = familyQuery.data?.invite_code;
+    if (!code) return;
+    await navigator.clipboard.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   if (familyQuery.isLoading || settingsQuery.isLoading) {
-    return <LoadingState />;
+    return <LoadingState label="Loading settings…" />;
   }
 
   return (
-    <div className="stack">
-      <h1 className="page-title">Settings</h1>
+    <Stack gap="lg" stagger>
+      <ThemePicker />
 
-      <Card>
-        <h2 style={{ marginTop: 0 }}>Account</h2>
-        <p>{profile?.email}</p>
-        <PrimaryButton variant="secondary" onClick={() => void signOut()}>
-          Sign out
-        </PrimaryButton>
-      </Card>
+      <section>
+        <h2 className="section-title">Account</h2>
+        <Card>
+          <ListRow icon={User} label={profile?.email ?? "Signed in"} />
+          <Button variant="danger" fullWidth icon={LogOut} onClick={() => void signOut()}>
+            Sign out
+          </Button>
+        </Card>
+      </section>
 
-      <Card>
-        <h2 style={{ marginTop: 0 }}>Family invite</h2>
-        <p>
-          Share this code: <strong>{familyQuery.data?.invite_code}</strong>
-        </p>
-      </Card>
+      <section>
+        <h2 className="section-title">Family</h2>
+        <Card>
+          <ListRow icon={KeyRound} label="Invite code" value="Share with family members" />
+          <div className="invite-pill">
+            <span>{familyQuery.data?.invite_code}</span>
+            <IconButton
+              icon={Copy}
+              label={copied ? "Copied" : "Copy invite code"}
+              variant="ghost"
+              onClick={() => void copyInviteCode()}
+            />
+          </div>
+        </Card>
+      </section>
 
-      <Card>
-        <h2 style={{ marginTop: 0 }}>Coverage fallback order</h2>
-        {orderedMembers.length === 0 ? (
-          <p className="muted">Add members to the fallback list below.</p>
-        ) : (
-          orderedMembers.map((member, index) =>
-            member ? (
-              <div
-                key={member.id}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  marginBottom: 8,
-                }}
-              >
-                <span style={{ flex: 1 }}>{member.name}</span>
-                <PrimaryButton
+      <section>
+        <h2 className="section-title">Coverage fallback</h2>
+        <Card>
+          {orderedMembers.length === 0 ? (
+            <p className="muted">Add members to the fallback list below.</p>
+          ) : (
+            orderedMembers.map((member, index) =>
+              member ? (
+                <ListRow
+                  key={member.id}
+                  icon={Users}
+                  label={member.name}
+                  actions={
+                    <>
+                      <IconButton
+                        icon={ChevronUp}
+                        label="Move up"
+                        onClick={() => void move(index, -1)}
+                        disabled={index === 0}
+                      />
+                      <IconButton
+                        icon={ChevronDown}
+                        label="Move down"
+                        onClick={() => void move(index, 1)}
+                        disabled={index === orderedMembers.length - 1}
+                      />
+                    </>
+                  }
+                />
+              ) : null,
+            )
+          )}
+          <Stack>
+            {members
+              .filter((m) => !orderedIds.includes(m.id))
+              .map((m) => (
+                <Button
+                  key={m.id}
                   variant="secondary"
-                  onClick={() => void move(index, -1)}
+                  onClick={() => void addToFallback(m.id)}
                 >
-                  Up
-                </PrimaryButton>
-                <PrimaryButton
-                  variant="secondary"
-                  onClick={() => void move(index, 1)}
-                >
-                  Down
-                </PrimaryButton>
-              </div>
-            ) : null,
-          )
-        )}
-        <div className="stack">
-          {members
-            .filter((m) => !orderedIds.includes(m.id))
-            .map((m) => (
-              <PrimaryButton
-                key={m.id}
-                variant="secondary"
-                onClick={() => void addToFallback(m.id)}
-              >
-                Add {m.name} to fallback
-              </PrimaryButton>
-            ))}
-        </div>
-      </Card>
+                  Add {m.name} to fallback
+                </Button>
+              ))}
+          </Stack>
+        </Card>
+      </section>
 
-      <Card>
-        <h2 style={{ marginTop: 0 }}>Notifications (PWA)</h2>
-        <p className="muted">
-          Install this app to your home screen, then enable push notifications for
-          shift alerts.
-        </p>
-        {push.supported ? (
-          <PrimaryButton onClick={() => void push.subscribe()}>
-            Enable push notifications
-          </PrimaryButton>
-        ) : (
-          <p className="muted">Push not supported in this browser.</p>
-        )}
-        {push.error ? <ErrorState message={push.error} /> : null}
-        {push.subscribed ? <p>Push enabled.</p> : null}
-      </Card>
+      <section>
+        <h2 className="section-title">Notifications</h2>
+        <Card>
+          <ListRow
+            icon={Bell}
+            label="Push notifications"
+            value="Install the app, then enable shift alerts"
+          />
+          {push.supported ? (
+            <Button onClick={() => void push.subscribe()} fullWidth>
+              Enable push notifications
+            </Button>
+          ) : (
+            <p className="muted">Push not supported in this browser.</p>
+          )}
+          {push.error ? <ErrorState message={push.error} /> : null}
+          {push.subscribed ? <p className="muted">Push enabled.</p> : null}
+        </Card>
+      </section>
 
-      <Card>
-        <h2 style={{ marginTop: 0 }}>Google Calendar</h2>
-        <p className="muted">
-          {calendar.connected
-            ? "Connected. Toggle sync on each shift when saving."
-            : "Connect to add companion shifts to your Google Calendar."}
-        </p>
-        {calendar.connected ? (
-          <PrimaryButton variant="secondary" onClick={() => void disconnectCalendar()}>
-            Disconnect calendar
-          </PrimaryButton>
-        ) : (
-          <PrimaryButton onClick={() => void connectCalendar()}>
-            Connect Google Calendar
-          </PrimaryButton>
-        )}
-        {calendarError ? <ErrorState message={calendarError} /> : null}
-        {message ? <p className="muted">{message}</p> : null}
-      </Card>
-    </div>
+      <section>
+        <h2 className="section-title">Calendar</h2>
+        <Card>
+          <ListRow
+            icon={Calendar}
+            label="Google Calendar"
+            value={
+              calendar.connected
+                ? "Connected — toggle sync when saving shifts"
+                : "Connect to sync companion shifts"
+            }
+          />
+          {calendar.connected ? (
+            <Button variant="secondary" fullWidth onClick={() => void disconnectCalendar()}>
+              Disconnect calendar
+            </Button>
+          ) : (
+            <Button fullWidth onClick={() => void connectCalendar()}>
+              Connect Google Calendar
+            </Button>
+          )}
+          {calendarError ? <ErrorState message={calendarError} /> : null}
+          {message ? <p className="muted">{message}</p> : null}
+        </Card>
+      </section>
+    </Stack>
   );
 }

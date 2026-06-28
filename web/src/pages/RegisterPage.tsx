@@ -1,9 +1,12 @@
 import type { FormEvent } from "react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { AuthLayout } from "../components/ui/common/AuthLayout";
+import { Button } from "../components/ui/common/Button";
 import { Card } from "../components/ui/common/Card";
-import { PrimaryButton } from "../components/ui/common/PrimaryButton";
 import { ErrorState } from "../components/ui/common/AsyncStates";
+import { FormStack } from "../components/ui/common/FormStack";
+import { TextInput } from "../components/ui/common/TextField";
 import { ROUTES } from "../lib/constants";
 import { supabase } from "../lib/supabase";
 
@@ -33,42 +36,38 @@ export function RegisterPage() {
   };
 
   return (
-    <div className="stack" style={{ maxWidth: 420, margin: "48px auto", padding: 16 }}>
-      <h1 className="page-title">Create account</h1>
+    <AuthLayout title="Create account" subtitle="Start coordinating care for your family">
       <Card>
-        <form className="stack" onSubmit={onSubmit}>
-          <label className="field">
-            Display name
-            <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
-          </label>
-          <label className="field">
-            Email
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </label>
-          <label className="field">
-            Password
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={6}
-            />
-          </label>
+        <FormStack gap="lg" onSubmit={onSubmit}>
+          <TextInput
+            label="Display name"
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+          />
+          <TextInput
+            label="Email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+          <TextInput
+            label="Password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            minLength={6}
+          />
           {error ? <ErrorState message={error} /> : null}
-          <PrimaryButton type="submit" disabled={loading}>
+          <Button type="submit" fullWidth loading={loading} disabled={loading}>
             {loading ? "Creating…" : "Register"}
-          </PrimaryButton>
-        </form>
-        <p className="muted">
+          </Button>
+        </FormStack>
+        <p className="muted" style={{ marginTop: 16, marginBottom: 0 }}>
           Already have an account? <Link to={ROUTES.login}>Sign in</Link>
         </p>
       </Card>
-    </div>
+    </AuthLayout>
   );
 }

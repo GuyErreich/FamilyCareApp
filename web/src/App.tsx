@@ -3,6 +3,7 @@ import { AppShell } from "./components/ui/common/AppShell";
 import { LoadingState } from "./components/ui/common/AsyncStates";
 import { ROUTES } from "./lib/constants";
 import { useAuth } from "./hooks/auth/useAuth";
+import { ThemePaletteProvider } from "./hooks/useThemePalette";
 import { CalendarPage } from "./pages/CalendarPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { FamilyPage } from "./pages/FamilyPage";
@@ -32,33 +33,35 @@ function AuthRoute({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <Routes>
-      <Route
-        path={ROUTES.login}
-        element={
-          <AuthRoute>
-            <LoginPage />
-          </AuthRoute>
-        }
-      />
-      <Route
-        path={ROUTES.register}
-        element={
-          <AuthRoute>
-            <RegisterPage />
-          </AuthRoute>
-        }
-      />
-      <Route path={ROUTES.onboarding} element={<OnboardingPage />} />
-      <Route element={<ProtectedRoute />}>
-        <Route path={ROUTES.dashboard} element={<DashboardPage />} />
-        <Route path={ROUTES.calendar} element={<CalendarPage />} />
-        <Route path={ROUTES.family} element={<FamilyPage />} />
-        <Route path={ROUTES.settings} element={<SettingsPage />} />
-        <Route path={ROUTES.shiftNew} element={<ShiftFormPage />} />
-        <Route path="/shifts/:id" element={<ShiftEditPage />} />
-      </Route>
-      <Route path="*" element={<Navigate to={ROUTES.dashboard} replace />} />
-    </Routes>
+    <ThemePaletteProvider>
+      <Routes>
+        <Route
+          path={ROUTES.login}
+          element={
+            <AuthRoute>
+              <LoginPage />
+            </AuthRoute>
+          }
+        />
+        <Route
+          path={ROUTES.register}
+          element={
+            <AuthRoute>
+              <RegisterPage />
+            </AuthRoute>
+          }
+        />
+        <Route path={ROUTES.onboarding} element={<OnboardingPage />} />
+        <Route element={<ProtectedRoute />}>
+          <Route path={ROUTES.dashboard} element={<DashboardPage />} />
+          <Route path={ROUTES.calendar} element={<CalendarPage />} />
+          <Route path={ROUTES.family} element={<FamilyPage />} />
+          <Route path={ROUTES.settings} element={<SettingsPage />} />
+          <Route path={ROUTES.shiftNew} element={<ShiftFormPage />} />
+          <Route path="/shifts/:id" element={<ShiftEditPage />} />
+        </Route>
+        <Route path="*" element={<Navigate to={ROUTES.dashboard} replace />} />
+      </Routes>
+    </ThemePaletteProvider>
   );
 }

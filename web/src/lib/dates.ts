@@ -73,10 +73,13 @@ export const computeEndTime = (
 
 export const monthGridWeeks = (anchor: Date): Date[][] => {
   const first = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
+  const last = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0);
   const start = addDays(first, -first.getDay());
+  const end = addDays(last, 6 - last.getDay());
+
   const weeks: Date[][] = [];
   let cursor = start;
-  for (let w = 0; w < 6; w += 1) {
+  while (cursor.getTime() <= end.getTime()) {
     const week: Date[] = [];
     for (let d = 0; d < 7; d += 1) {
       week.push(cursor);

@@ -1,9 +1,14 @@
 import type { FormEvent } from "react";
 import { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
+import { AuthLayout } from "../components/ui/common/AuthLayout";
+import { Button } from "../components/ui/common/Button";
 import { Card } from "../components/ui/common/Card";
-import { PrimaryButton } from "../components/ui/common/PrimaryButton";
 import { ErrorState, LoadingState } from "../components/ui/common/AsyncStates";
+import { FormStack } from "../components/ui/common/FormStack";
+import { SegmentedControl } from "../components/ui/common/SegmentedControl";
+import { Stack } from "../components/ui/common/Stack";
+import { TextInput } from "../components/ui/common/TextField";
 import { useAuth } from "../hooks/auth/useAuth";
 import { ROUTES } from "../lib/constants";
 import { useCreateFamily, useJoinFamily } from "../hooks/shifts/useShiftMutations";
@@ -44,68 +49,52 @@ export function OnboardingPage() {
   const submitting = createFamily.isPending || joinFamily.isPending;
 
   return (
-    <div className="stack" style={{ maxWidth: 480, margin: "32px auto", padding: 16 }}>
-      <h1 className="page-title">Join your family</h1>
+    <AuthLayout title="Join your family" subtitle="Create a new family or enter an invite code">
       <Card>
-        <div className="stack">
-          <div style={{ display: "flex", gap: 8 }}>
-            <PrimaryButton
-              type="button"
-              variant={joinMode ? "secondary" : "primary"}
-              onClick={() => setJoinMode(false)}
-              disabled={submitting}
-            >
-              Create family
-            </PrimaryButton>
-            <PrimaryButton
-              type="button"
-              variant={joinMode ? "primary" : "secondary"}
-              onClick={() => setJoinMode(true)}
-              disabled={submitting}
-            >
-              Join with code
-            </PrimaryButton>
-          </div>
-          <form className="stack" onSubmit={onSubmit}>
+        <Stack gap="lg">
+          <SegmentedControl
+            value={joinMode ? "join" : "create"}
+            onChange={(mode) => setJoinMode(mode === "join")}
+            ariaLabel="Onboarding mode"
+            options={[
+              { value: "create", label: "Create family", disabled: submitting },
+              { value: "join", label: "Join with code", disabled: submitting },
+            ]}
+          />
+          <FormStack gap="lg" onSubmit={onSubmit}>
             {!joinMode ? (
               <>
-                <label className="field">
-                  Family name
-                  <input
-                    value={familyName}
-                    onChange={(e) => setFamilyName(e.target.value)}
-                    required
-                    disabled={submitting}
-                  />
-                </label>
-                <label className="field">
-                  Who are we caring for?
-                  <input
-                    value={grandpaName}
-                    onChange={(e) => setGrandpaName(e.target.value)}
-                    required
-                    disabled={submitting}
-                  />
-                </label>
-              </>
-            ) : (
-              <label className="field">
-                Invite code
-                <input
-                  value={inviteCode}
-                  onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+                <TextInput
+                  label="Family name"
+                  value={familyName}
+                  onChange={(e) => setFamilyName(e.target.value)}
                   required
                   disabled={submitting}
                 />
-              </label>
+                <TextInput
+                  label="Who are we caring for?"
+                  value={grandpaName}
+                  onChange={(e) => setGrandpaName(e.target.value)}
+                  required
+                  disabled={submitting}
+                />
+              </>
+            ) : (
+              <TextInput
+                label="Invite code"
+                value={inviteCode}
+                onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+                required
+                disabled={submitting}
+              />
             )}
             {error ? <ErrorState message={error} /> : null}
-            <PrimaryButton type="submit" disabled={submitting}>
+            <Button type="submit" fullWidth loading={submitting} disabled={submitting}>
               {submitting ? "Setting up…" : "Continue"}
-            </PrimaryButton>
-          </form>
-        </div>
+            </Button>
+          </FormStack>
+        </Stack>
       </Card>
-    </div>
+    </AuthLayout>
   );
 }

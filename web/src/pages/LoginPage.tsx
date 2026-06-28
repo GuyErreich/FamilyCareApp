@@ -1,9 +1,13 @@
 import type { FormEvent } from "react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Globe } from "lucide-react";
+import { AuthLayout } from "../components/ui/common/AuthLayout";
+import { Button } from "../components/ui/common/Button";
 import { Card } from "../components/ui/common/Card";
-import { PrimaryButton } from "../components/ui/common/PrimaryButton";
 import { ErrorState } from "../components/ui/common/AsyncStates";
+import { FormStack } from "../components/ui/common/FormStack";
+import { TextInput } from "../components/ui/common/TextField";
 import { APP_NAME, ROUTES } from "../lib/constants";
 import { checkGoogleOAuthConfigured } from "../lib/googleOAuth";
 import { supabase } from "../lib/supabase";
@@ -46,42 +50,37 @@ export function LoginPage() {
   };
 
   return (
-    <div className="stack" style={{ maxWidth: 420, margin: "48px auto", padding: 16 }}>
-      <h1 className="page-title">{APP_NAME}</h1>
+    <AuthLayout title={APP_NAME} subtitle="Coordinate companion shifts together">
       <Card>
-        <form className="stack" onSubmit={onSubmit}>
-          <label className="field">
-            Email
-            <input
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </label>
-          <label className="field">
-            Password
-            <input
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </label>
+        <FormStack gap="lg" onSubmit={onSubmit}>
+          <TextInput
+            label="Email"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+          <TextInput
+            label="Password"
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
           {error ? <ErrorState message={error} /> : null}
-          <PrimaryButton type="submit" disabled={loading}>
+          <Button type="submit" fullWidth loading={loading} disabled={loading}>
             {loading ? "Signing in…" : "Sign in"}
-          </PrimaryButton>
-          <PrimaryButton type="button" variant="secondary" onClick={onGoogle}>
+          </Button>
+          <Button type="button" variant="secondary" fullWidth icon={Globe} onClick={onGoogle}>
             Continue with Google
-          </PrimaryButton>
-        </form>
-        <p className="muted">
+          </Button>
+        </FormStack>
+        <p className="muted" style={{ marginTop: 16, marginBottom: 0 }}>
           No account? <Link to={ROUTES.register}>Register</Link>
         </p>
       </Card>
-    </div>
+    </AuthLayout>
   );
 }
