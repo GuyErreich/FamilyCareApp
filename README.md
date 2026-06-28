@@ -173,10 +173,6 @@ See `web/AGENTS.md` for client layout and `Taskfile.yml` for all tasks.
 
 In-app notifications work via Supabase Realtime without push permission. Web Push requires an installed PWA and VAPID keys configured.
 
-## Legacy Flutter + Firebase
-
-The previous mobile app and Firebase backend live in `legacy/` for reference only. New development uses `web/` and `supabase/`.
-
 ## Architecture
 
 ```

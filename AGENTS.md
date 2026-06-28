@@ -19,14 +19,10 @@
 | README, public API docs | `project/docs` |
 | Update skills/rules | `meta/improvement-protocol` |
 
-Do **not** use `flutter/*` or `platform/firebase` for new work. Legacy code is in `legacy/`.
-
 ## Structure
 
 - `web/` — Vite + React PWA (primary client)
 - `supabase/` — Postgres migrations, RLS, Edge Functions
-- `legacy/flutter/` — retired Flutter app
-- `legacy/firebase/` — retired Firestore rules and Cloud Functions
 
 ## Commands
 
@@ -42,4 +38,4 @@ task deploy:pages
 
 ## Delivery phases
 
-Supabase backend → web scaffold → auth → core features → calendar → planner → PWA + deploy → retire legacy.
+Supabase backend → web scaffold → auth → core features → calendar → planner → PWA + deploy.
