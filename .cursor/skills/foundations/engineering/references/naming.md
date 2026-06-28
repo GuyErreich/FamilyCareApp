@@ -6,20 +6,18 @@ Names reveal responsibility. Use domain vocabulary consistently across features.
 
 | Suffix | Meaning |
 |---|---|
-| `*_page.dart` | Routable screen |
-| `*_provider.dart` | Riverpod providers / notifiers |
-| `*_use_case.dart` | Domain business operation |
-| `*_repository.dart` | Domain interface |
-| `*_repository_impl.dart` | Firestore/data implementation |
-| `*_dto.dart` | Firestore serialization |
-| `app_*.dart` in `shared/widgets/` | App-wide reusable widget |
+| `*Page.tsx` in `pages/` | Routable screen |
+| `use*.ts` in `hooks/` | Data fetching, mutations, or feature state |
+| `*.tsx` in `components/ui/common/` | App-wide reusable component |
+| `*.tsx` in `components/ui/<domain>/` | Domain-specific UI |
+| `*.ts` in `lib/` | Utilities, types, Supabase client, constants |
 
-## Dart conventions
+## TypeScript conventions
 
-- Classes: `PascalCase`
-- Files: `snake_case.dart` matching primary public type
-- Providers: descriptive noun + `Provider` (`todayShiftsProvider`)
-- Private widgets in pages: `_WidgetName` prefix
+- Components and types: `PascalCase`
+- Hooks: `use` prefix + `PascalCase` (`useShiftMutations`)
+- Files: match primary export (`DashboardPage.tsx`, `useAuth.tsx`)
+- Private helpers: module-local, not exported
 
 ## Domain terms
 

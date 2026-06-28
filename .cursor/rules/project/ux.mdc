@@ -1,15 +1,15 @@
 ---
 description: UI/UX quality bar — navigation, feedback, clarity, accessibility
-globs: lib/**/presentation/**/*.dart,lib/shared/widgets/**/*.dart
+globs: web/src/pages/**,web/src/components/ui/**
 alwaysApply: false
 ---
 
 # UX Standards
 
-- Shell navigation only via `AppNavigationDestinations` / `app_navigation.dart`
+- Shell navigation only via `TabBarNav.tsx` and `ROUTES` in `lib/constants.ts`
 - Haptic + visual feedback on tab changes and primary actions
 - Loading, error, and empty states must be intentional
-- Touch targets ≥ 48dp; tooltips on icon-only controls
+- Touch targets ≥ 48px; labels on icon-only controls
 - Primary content fills space; thin chrome
 
 Load `.cursor/skills/project/ux/SKILL.md` when designing or reviewing UI. Run the pre-ship checklist before finishing UI work.

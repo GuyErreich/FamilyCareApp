@@ -33,7 +33,7 @@ When a new improvement is discovered during development or review, flag it befor
 
 1. **Pause** and flag explicitly with context
 2. **Ask:** implement now, parallel session (recommended), or skip
-3. **Parallel session:** read target file, draft, implement, validate (`task analyze`, `task test`), report back
+3. **Parallel session:** read target file, draft, implement, validate (`task web:check`), report back
 4. Main session continues uninterrupted
 
 ## Good vs skip
@@ -49,4 +49,4 @@ When a new improvement is discovered during development or review, flag it befor
 - `AGENTS.md` — entry point and commands
 - `README.md` — setup and schema (via `project/docs` skill)
 
-Keep `foundations/` and `flutter/` skills free of one-off project paths; project-specific paths belong in `project/` or `platform/`.
+Keep `foundations/` skills free of one-off project paths; project-specific paths belong in `project/` or `platform/`.

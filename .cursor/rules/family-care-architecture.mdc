@@ -5,13 +5,12 @@ alwaysApply: true
 
 # Architecture
 
-See `.cursor/rules/foundations/engineering.mdc` for universal principles and `.cursor/rules/flutter/architecture.mdc` for Flutter layer rules.
+See `.cursor/rules/foundations/engineering.mdc` for universal principles.
 
 Quick reference:
 
-- Three layers per feature: presentation, domain, data.
-- Widgets render state and dispatch intents only.
-- Business rules live in domain use-cases.
-- Repository pattern with interfaces in domain, impls in data.
-- Shared UI in `lib/shared/widgets/`.
-- Core cross-cutting concerns in `lib/core/`.
+- Route screens in `web/src/pages/`; reusable UI in `web/src/components/ui/`.
+- Data fetching and mutations in `web/src/hooks/`; Supabase client and types in `web/src/lib/`.
+- Pages compose components and hooks; business rules live in hooks and `lib/` utilities.
+- Shared UI in `web/src/components/ui/common/`; domain UI in `web/src/components/ui/<domain>/`.
+- Cross-cutting concerns (theme, routes, constants) in `web/src/lib/` and `web/src/styles/`.

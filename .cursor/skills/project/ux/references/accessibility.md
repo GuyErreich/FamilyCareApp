@@ -1,30 +1,30 @@
-# Accessibility (Flutter)
+# Accessibility (Web)
 
 ## Touch targets
 
-- Minimum 48×48 logical pixels for tappable controls
-- `IconButton` and nav destinations rely on theme padding — do not shrink below M3 defaults
+- Minimum 48×48 CSS pixels for tappable controls
+- Icon buttons rely on padding — do not shrink below accessible defaults
 
 ## Labels
 
-- `tooltip` on icon-only `IconButton` and nav icons
-- `Semantics(label: …)` when icon + visible text is not enough
-- Form fields: `labelText` / `decoration` — not placeholder-only
+- `aria-label` on icon-only buttons and nav icons
+- Form fields: visible labels — not placeholder-only
+- Meaningful button text for screen readers
 
 ## Color & contrast
 
-- Text on surfaces: `onSurface` / `onSurfaceVariant` from theme
+- Text on surfaces: theme tokens from `base.css`
 - Do not convey state by color alone — add icon, weight, or label (e.g. conflict vs available slot)
-- Grid lines: use `outlineVariant` with documented alpha in style modules
+- Grid lines: use theme border colors with documented opacity
 
 ## Motion
 
-- Respect platform reduced-motion when adding custom animations (prefer theme defaults)
+- Respect `prefers-reduced-motion` when adding custom animations
 - Avoid motion as the only indicator of selection — pair with color/weight
 
 ## Screen readers
 
-- Buttons and links for actions — not `GestureDetector` on static text without semantics
-- List tiles: meaningful `title` and `subtitle`
+- Use semantic HTML (`button`, `nav`, `main`) for actions and landmarks
+- List rows: meaningful visible text content
 
-Project motion contract: `project/ui-interactions`. Project nav tooltips: `references/navigation.md`.
+Project motion contract: `project/ui-interactions`. Project nav labels: `references/navigation.md`.

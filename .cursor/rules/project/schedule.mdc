@@ -1,13 +1,13 @@
 ---
 description: Schedule calendar and planner visual contract
-globs: lib/features/schedule/**/*.dart,lib/features/calendar/**/*.dart
+globs: web/src/components/ui/schedule/**,web/src/pages/CalendarPage.tsx
 alwaysApply: false
 ---
 
 # Schedule & Calendar
 
-- Style through `schedule_calendar_style.dart` and `planner_slot_painters.dart` only.
+- Style through CSS in `web/src/styles/base.css` and schedule components in `web/src/components/ui/schedule/common/`.
 - Hour-band zebra rows, visible grid lines, column dividers — no checkerboard day columns.
-- Full-bleed planner; wrap via `FamilySchedulePlanner` / `FamilyScheduleMonth`.
+- Full-bleed planner; compose via `ScheduleViews.tsx` and `CalendarPageContent.tsx`.
 
 Load `.cursor/skills/project/schedule/SKILL.md` before changing planner or month grid behavior.

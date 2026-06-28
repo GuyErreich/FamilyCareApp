@@ -9,7 +9,7 @@ Before writing or reviewing code:
 
 - Reuse before creating; extract when the same pattern appears twice.
 - Explicit types at boundaries; types document intent.
-- Name by responsibility; use project suffixes (`*_page.dart`, `*_provider.dart`, …).
+- Name by responsibility; use project suffixes (`*Page.tsx`, `use*.ts`, …).
 - Place code by feature layer; shared vs feature-local obvious from path.
 - Separate data, orchestration, presentation, and I/O.
 - Couple what changes together; decouple what changes for different reasons.

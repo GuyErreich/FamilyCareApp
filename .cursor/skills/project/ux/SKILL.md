@@ -1,6 +1,6 @@
 ---
 name: ux-standards
-description: Family Care Scheduler UI/UX quality bar — navigation, feedback, clarity, accessibility, and pre-ship checklist. Use when designing screens, menus, forms, empty states, or reviewing UI polish. Extends flutter-ui and ui-interactions.
+description: Family Care Scheduler UI/UX quality bar — navigation, feedback, clarity, accessibility, and pre-ship checklist. Use when designing screens, menus, forms, empty states, or reviewing UI polish. Extends code/web/ui and ui-interactions.
 disable-model-invocation: true
 ---
 
@@ -10,7 +10,7 @@ Minimum bar for every user-facing surface. If a change fails a **must** rule, fi
 
 ## Extends
 
-Load `foundations/engineering`, `flutter/ui`, and `project/ui-interactions` first. Schedule views also need `project/schedule`.
+Load `foundations/engineering`, `code/web/ui`, and `project/ui-interactions` first. Schedule views also need `project/schedule`.
 
 ## Principles
 
@@ -19,27 +19,27 @@ Load `foundations/engineering`, `flutter/ui`, and `project/ui-interactions` firs
 | Clarity | User knows where they are and what to do next | `references/clarity-and-hierarchy.md` |
 | Feedback | Every tap produces visible + haptic response | `references/feedback-and-states.md` |
 | Consistency | Theme tokens, shared widgets, one nav definition | `references/navigation.md` |
-| Accessibility | Tooltips, contrast, 48dp targets, semantic structure | `references/accessibility.md` |
-| Space | Primary content fills the screen; chrome stays thin | `flutter/ui` fill rule |
+| Accessibility | Labels, contrast, 48px targets, semantic structure | `references/accessibility.md` |
+| Space | Primary content fills the screen; chrome stays thin | `code/web/ui` fill rule |
 | Recovery | Loading, error, and empty states are designed — not blank | `references/feedback-and-states.md` |
 
 ## Navigation contract
 
-- Shell tabs defined only in `AppNavigationDestinations` / `app_navigation.dart`
-- Bottom bar: floating pill (`AppNavigationBar`), haptic on tab change, tooltips on icons
-- Tablet: `AppNavigationRail` with branded leading avatar
+- Shell tabs defined only in `TabBarNav.tsx` with routes from `ROUTES` in `lib/constants.ts`
+- Bottom bar: floating pill, haptic on tab change, labels on icons
 - Do not duplicate tab labels/icons in feature pages
-- Pushed routes use `fadeSlidePage` / `sharedAxisPage` — not instant cuts
+- Form and detail routes should feel intentional — not instant cuts
 
 ## Shared widgets (use before inventing)
 
 | Need | Widget |
 |---|---|
-| Page chrome | `AppScaffold` |
-| Shell menu | `AppNavigationBar`, `AppNavigationRail` |
-| Tappable card | `AppCard` |
-| Primary action | `PrimaryButton` |
-| Async content | `AsyncValueWidget` |
+| Page chrome | `AppShell.tsx` |
+| Shell menu | `TabBarNav.tsx` |
+| Tappable card | `Card.tsx` |
+| Primary action | `PrimaryButton.tsx` |
+| Async content | `AsyncStates.tsx` |
+| Bottom sheet | `BottomSheet.tsx` |
 
 ## Pre-ship UI checklist
 
@@ -47,21 +47,21 @@ Copy and verify before marking UI work done:
 
 ```
 - [ ] Uses theme colors/text — no stray hex except member shift colors
-- [ ] Interactive targets ≥ 48dp; icon buttons have tooltip
-- [ ] Loading / error / empty handled (AsyncValue or explicit widget)
-- [ ] Motion from AppMotion; routes use page_transitions
+- [ ] Interactive targets ≥ 48px; icon buttons have aria-label
+- [ ] Loading / error / empty handled (AsyncStates or explicit component)
+- [ ] Motion from CSS tokens in base.css
 - [ ] Primary content fills space — no unnecessary nested boxes
-- [ ] New nav items added to AppNavigationDestinations only
-- [ ] task analyze passes
+- [ ] New nav items added to TabBarNav + ROUTES only
+- [ ] task web:lint passes
 ```
 
 ## Anti-patterns (reject in review)
 
-- Raw `NavigationBar` / `NavigationRail` in feature code
-- Silent failures (empty `SizedBox.shrink()` without intentional design)
+- Custom tab row in a feature page for main navigation
+- Silent failures (empty fragment without intentional design)
 - Checkerboard or harsh alternating fills for structure
-- `setState` for data that should be in Riverpod
-- Ad-hoc `Duration` / `Curves` per screen
+- Duplicated fetch logic in components that should use hooks
+- Ad-hoc transition durations per screen
 
 ## When to load references
 

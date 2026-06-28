@@ -6,7 +6,7 @@ alwaysApply: true
 # Documentation
 
 - Update README when project structure or setup changes.
-- Public API gets brief dartdoc; private code does not.
+- Public API gets brief JSDoc on exports; private code does not.
 - No comment noise; names and structure carry meaning.
 - Phase completion includes a doc pass (see `project/docs` skill).
 - Code explains itself first — refactor instead of commenting.

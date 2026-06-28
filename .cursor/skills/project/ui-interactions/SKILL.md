@@ -1,63 +1,55 @@
 ---
 name: ui-interactions
-description: Family Care tactile UI contract — AppMotion transitions, press feedback, rounded surfaces, and slide-up confirm bars. Use when adding buttons, cards, navigation, dialogs, or interactive schedule chrome. Extends flutter-ui.
+description: Family Care tactile UI contract — CSS motion tokens, press feedback, rounded surfaces, and slide-up confirm bars. Use when adding buttons, cards, navigation, dialogs, or interactive schedule chrome. Extends code/web/ui.
 disable-model-invocation: true
 ---
 
 # UI Interactions (project)
 
-Everything interactive should feel responsive: rounded surfaces, deliberate motion, and clear affordances. This is the project overlay on generic Flutter UI rules.
+Everything interactive should feel responsive: rounded surfaces, deliberate motion, and clear affordances. This is the project overlay on generic web UI rules.
 
 ## Extends
 
-Load `foundations/engineering` and `flutter/ui` first. For UX review checklist, load `project/ux`. For schedule-specific grid rules, also load `project/schedule`.
+Load `foundations/engineering` and `code/web/ui` first. For UX review checklist, load `project/ux`. For schedule-specific grid rules, also load `project/schedule`.
 
 ## Motion tokens
 
-Use `lib/core/theme/app_motion.dart` — never invent ad-hoc `Duration(milliseconds: 250)` in feature code.
+Use CSS variables in `web/src/styles/base.css` — never invent ad-hoc `transition: 250ms` in feature code.
 
 | Token | Use |
 |---|---|
-| `AppMotion.fast` | Press feedback, reverse transitions |
-| `AppMotion.medium` | Page push, confirm bar enter |
-| `AppMotion.slow` | Hero / login entrance |
-| `AppMotion.spring` | Bottom sheet / confirm bar slide |
-| `AppMotion.pressScale` | `AppCard` scale |
+| `--motion-fast` | Press feedback, reverse transitions |
+| `--motion-medium` | Page transitions, confirm bar enter |
+| `--motion-spring` | Bottom sheet / confirm bar slide |
 
 ## Route transitions
 
-- Pushed detail/form routes: `fadeSlidePage` or `sharedAxisPage` in `app_router.dart`
-- Do not add bare `GoRoute(builder:)` for flows that should feel modal
+- Page content uses CSS transitions on enter; avoid instant cuts for modal flows
+- Sheets and confirm bars use `BottomSheet.tsx` or slide-up patterns
 
 ## Interactive widgets
 
 | Element | Contract |
 |---|---|
-| `AppCard` | Rounded card; optional `onTap` with scale feedback |
-| `PrimaryButton` | Min height 48; uses theme `FilledButton` shape |
-| `ScheduleSlotConfirmBar` | Slides up; rounded top radius 22; `SafeArea` bottom |
-| `AppNavigationBar` / `AppNavigationRail` | Shell menu; haptic on change; floating pill on phone |
+| `Card.tsx` | Rounded card; optional click with press feedback |
+| `PrimaryButton.tsx` / `Button.tsx` | Min height 48px; theme button radius |
+| `PlannerSelectionBar.tsx` | Slides up; rounded top; safe-area bottom |
+| `TabBarNav.tsx` | Shell menu; haptic on change; floating pill on phone |
 
 ## Layout
 
 - Prefer **fill** over **box** — schedules and lists use available height
 - Cards and chips for metadata (legend, warnings) — not for constraining primary content
-- Border radius: cards 18, buttons 14, dialogs 20 — extend theme, don't one-off
+- Border radius: cards 18px, buttons 14px — use `--radius-card`, `--radius-button`
 
 ## Accessibility
 
-- `tooltip` on `IconButton` actions
-- Semantic labels on icon-only controls
-- Sufficient contrast on hour lines and cell borders (`outlineVariant` alphas in `schedule_calendar_style`)
+- `aria-label` on icon-only buttons
+- Sufficient contrast on hour lines and cell borders
+- Respect `prefers-reduced-motion` when adding custom animations
 
 ## Anti-patterns
 
-- `AnimatedSwitcher` on `StatefulNavigationShell` (breaks tab state)
+- Remounting the entire shell on tab change (breaks tab state)
 - Checkerboard backgrounds for "readability"
 - External animation durations per screen
-
-## When to load references
-
-| Topic | Reference |
-|---|---|
-| Theme wiring | `flutter/ui/references/theme-and-motion.md` |

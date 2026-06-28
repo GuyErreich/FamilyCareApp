@@ -6,5 +6,5 @@ alwaysApply: false
 
 # CI
 
-- Run `flutter analyze`, `flutter test`, and `dart format --set-exit-if-changed .`
-- Fail PRs on analyzer errors or test failures.
+- Run `task web:check` (lint, test, build) before opening PRs.
+- Fail PRs on ESLint errors, test failures, or build failures.

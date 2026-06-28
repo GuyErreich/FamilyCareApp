@@ -4,28 +4,21 @@
 
 All primary shell tabs live in:
 
-- `lib/shared/widgets/app_navigation.dart` → `AppNavigationDestinations`
-- Wired through `AppShell` in `app_scaffold.dart`
+- `web/src/components/ui/common/TabBarNav.tsx` — tab links and icons
+- `web/src/lib/constants.ts` → `ROUTES` — route paths
+- Wired through `AppShell.tsx`
 
-Adding a fifth tab: update destinations, `app_router.dart` branches, and `AppRoutes` — nowhere else.
+Adding a fifth tab: update `TabBarNav.tsx`, `ROUTES`, and `App.tsx` routes — nowhere else.
 
-## Bottom bar (`AppNavigationBar`)
+## Bottom bar (`TabBarNav`)
 
-- Floating pill: 16px horizontal inset, 12px bottom safe area, 26px corner radius
-- Surface: `surfaceContainerLowest` + outline border + soft shadow
-- Inner `NavigationBar`: transparent background, theme indicator pill
-- `HapticFeedback.lightImpact()` when the selected index changes
-- `Tooltip` on each icon (not label-only hints)
-
-## Rail (`AppNavigationRail`)
-
-- Used when `context.isTablet` (width ≥ 600)
-- Branded `CircleAvatar` leading with care icon
-- Same destinations and haptics as bottom bar
-- Theme: rounded indicator, `primaryContainer` fill
+- Floating pill with rounded corners and safe-area inset
+- Surface uses theme tokens from `base.css`
+- `navigator.vibrate()` haptic when the selected index changes
+- Visible labels on each tab (users should not guess icons)
 
 ## Do not
 
 - Build a custom tab row in a feature page for main navigation
-- Hide labels on phone (`alwaysShow` — users should not guess icons)
-- Animate the entire `StatefulNavigationShell` with `AnimatedSwitcher`
+- Hide labels on phone
+- Remount the entire shell on tab change

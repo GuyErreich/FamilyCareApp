@@ -4,23 +4,23 @@ One module, one reason to change.
 
 ## Four concerns to keep apart
 
-- **Data** — Firestore queries, DTOs, repository implementations.
-- **Orchestration** — use-cases, notifiers, business rules, overlap validation.
-- **Presentation** — widgets, pages, layout; dispatch intents only.
-- **I/O and side effects** — Firebase, FCM, local notifications, Google Calendar API.
+- **Data** — Supabase queries, typed row mapping, client configuration.
+- **Orchestration** — hooks, business rules, overlap validation, mutation logic.
+- **Presentation** — React components, layout; dispatch intents only.
+- **I/O and side effects** — Supabase Realtime, Web Push, Google Calendar API.
 
-Widgets must not embed business rules. Use-cases and repositories must not import `material.dart`.
+Components must not embed business rules. Hooks and `lib/` utilities must not import presentation-only concerns.
 
 ## This project's layer mapping
 
 ```
-lib/features/<name>/
-  data/           # repositories impl, DTOs
-  domain/         # entities, repository interfaces, use-cases
-  presentation/   # pages, widgets, providers (Riverpod wiring)
+web/src/
+  pages/              # route screens — compose hooks + components
+  components/ui/      # presentation
+  hooks/              # data fetching, mutations, feature state
+  lib/                # supabase client, types, pure utilities
+  styles/             # global CSS and design tokens
 ```
-
-Cross-cutting: `lib/core/` (router, theme, utils). Reusable UI: `lib/shared/widgets/`.
 
 ## Smell
 
