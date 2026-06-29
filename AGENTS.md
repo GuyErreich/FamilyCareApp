@@ -4,7 +4,7 @@
 
 1. `.cursor/PLUGIN.md` — skill inheritance and layout
 2. `.cursor/skills/foundations/engineering/SKILL.md` — universal principles (always)
-3. `README.md` — Supabase schema and setup
+3. `README.md` — Supabase schema and setup; `docs/google-oauth.md` — Google OAuth Testing vs Production and verification
 4. `web/AGENTS.md` — Vite client layout and conventions
 
 ## Skill index
@@ -17,7 +17,7 @@
 | UX quality bar, menus, states | `project/ux` |
 | Planner / month calendar | `project/schedule` |
 | README, public API docs | `project/docs` |
-| Update skills/rules | `meta/improvement-protocol` |
+| Update skills/rules | `~/.cursor/skills/meta/improvement-protocol` |
 
 ## Structure
 

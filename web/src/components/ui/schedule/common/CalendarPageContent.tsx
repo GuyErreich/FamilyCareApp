@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { IconButton } from "../../common/IconButton";
 import { BottomSheet } from "../../common/BottomSheet";
@@ -17,8 +17,9 @@ import { EventEditSheet, type EditTarget } from "./EventEditSheet";
 import { PlannerSelectionBar } from "./PlannerSelectionBar";
 import { MonthYearPickerSheet } from "./MonthYearPickerSheet";
 import { addDays, startOfDay, toDateKey } from "../../../../lib/dates";
-import { PANEL_TRANSITION } from "../../../../lib/motion";
+import { PANEL_SLIDE_PX, slideFadeVariants } from "../../../../lib/motion";
 import { SCHEDULE } from "../../../../lib/constants";
+import { useShiftCalendarSync } from "../../../../hooks/calendar/useShiftCalendarSync";
 import {
   useCurrentMember,
   useFamilyMembers,
@@ -96,6 +97,7 @@ export function CalendarPageContent() {
   const [batchDeleteError, setBatchDeleteError] = useState<string | null>(null);
   const [dragError, setDragError] = useState<string | null>(null);
   const [monthYearOpen, setMonthYearOpen] = useState(false);
+  const [panelDirection, setPanelDirection] = useState(1);
   const reduceMotion = useReducedMotion();
 
   const rangeStart = toDateKey(addDays(month, -7));
@@ -108,6 +110,7 @@ export function CalendarPageContent() {
   const updateUnavail = useUpdateUnavailability();
   const batchDeleteShifts = useBatchDeleteShifts();
   const batchDeleteUnavail = useBatchDeleteUnavailabilities();
+  const { syncAfterSave, removeBeforeDelete } = useShiftCalendarSync();
 
   const membersById = useMemo(() => {
     const map = new Map<string, NonNullable<typeof membersQuery.data>[number]>();
@@ -184,6 +187,7 @@ export function CalendarPageContent() {
       return new Date(dayStart.getFullYear(), dayStart.getMonth(), 1);
     });
     setView("day");
+    setPanelDirection(1);
     setMarkedKeys(new Set());
     navigator.vibrate?.(8);
   };
@@ -191,6 +195,7 @@ export function CalendarPageContent() {
   const backToMonth = () => {
     setMonth(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1));
     setView("month");
+    setPanelDirection(-1);
     setMarkedKeys(new Set());
     navigator.vibrate?.(8);
   };
@@ -295,7 +300,7 @@ export function CalendarPageContent() {
       if (event.kind === "shift") {
         const shift = shiftById.get(event.id);
         if (!shift) return;
-        await saveShift.mutateAsync({
+        const saved = await saveShift.mutateAsync({
           id: shift.id,
           input: {
             assigned_member_id: shift.assigned_member_id,
@@ -306,6 +311,10 @@ export function CalendarPageContent() {
             notes: shift.notes,
             status: shift.status,
           },
+        });
+        await syncAfterSave(saved, members, {
+          shiftId: shift.id,
+          calendarEventId: shift.calendar_event_id,
         });
       } else {
         const block = unavailById.get(event.id);
@@ -351,6 +360,10 @@ export function CalendarPageContent() {
       else unavailIds.push(id);
     }
     try {
+      for (const id of shiftIds) {
+        const shift = shiftById.get(id);
+        await removeBeforeDelete(shift?.calendar_event_id);
+      }
       if (shiftIds.length) await batchDeleteShifts.mutateAsync(shiftIds);
       if (unavailIds.length) await batchDeleteUnavail.mutateAsync(unavailIds);
       setMarkedKeys(new Set());
@@ -362,24 +375,23 @@ export function CalendarPageContent() {
 
   const batchDeletePending = batchDeleteShifts.isPending || batchDeleteUnavail.isPending;
   const isDayView = view === "day";
+  const panelVariants = slideFadeVariants(PANEL_SLIDE_PX, reduceMotion);
 
   return (
     <div className="calendar-screen" data-view={view}>
       <div className="calendar-viewport">
-        <motion.section
-          className="calendar-panel calendar-panel--month"
-          aria-hidden={!isDayView ? false : true}
-          animate={
-            reduceMotion
-              ? { opacity: isDayView ? 0.4 : 1 }
-              : { x: isDayView ? "-12%" : 0, opacity: isDayView ? 0.4 : 1 }
-          }
-          transition={PANEL_TRANSITION}
-          style={{
-            zIndex: isDayView ? 1 : 2,
-            pointerEvents: isDayView ? "none" : "auto",
-          }}
-        >
+        <AnimatePresence mode="wait" initial={false} custom={panelDirection}>
+          {!isDayView ? (
+            <motion.section
+              key="month"
+              custom={panelDirection}
+              className="calendar-panel calendar-panel--month"
+              variants={panelVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              aria-hidden={false}
+            >
           <header className="calendar-toolbar">
             <IconButton icon={ChevronLeft} label="Previous month" onClick={() =>
               setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))
@@ -406,21 +418,17 @@ export function CalendarPageContent() {
             onSelectDate={openDay}
           />
         </motion.section>
-
-        <motion.section
-          className="calendar-panel calendar-panel--day"
-          aria-hidden={isDayView ? false : true}
-          animate={
-            reduceMotion
-              ? { opacity: isDayView ? 1 : 0 }
-              : { x: isDayView ? 0 : "100%", opacity: isDayView ? 1 : 0 }
-          }
-          transition={PANEL_TRANSITION}
-          style={{
-            zIndex: isDayView ? 2 : 1,
-            pointerEvents: isDayView ? "auto" : "none",
-          }}
-        >
+          ) : (
+            <motion.section
+              key="day"
+              custom={panelDirection}
+              className="calendar-panel calendar-panel--day"
+              variants={panelVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              aria-hidden={false}
+            >
           <header className="calendar-toolbar">
             <IconButton icon={ChevronLeft} label="Back to month" onClick={backToMonth} />
             <button
@@ -455,6 +463,8 @@ export function CalendarPageContent() {
             </p>
           ) : null}
         </motion.section>
+          )}
+        </AnimatePresence>
       </div>
 
       <ScheduleSlotSheet

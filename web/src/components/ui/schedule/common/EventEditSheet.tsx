@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Button } from "../../common/Button";
 import { BottomSheet } from "../../common/BottomSheet";
 import { useSheetDismiss } from "../../common/sheetDismissContext";
 import { MemberChipPicker } from "../../common/MemberChipPicker";
 import { Stack } from "../../common/Stack";
 import { TextInput } from "../../common/TextField";
+import { ShiftCalendarSyncControl } from "./ShiftCalendarSyncControl";
 import type { FamilyMember, Shift, Unavailability } from "../../../../lib/database.types";
 import { ROUTES } from "../../../../lib/constants";
+import { useShiftCalendarSync } from "../../../../hooks/calendar/useShiftCalendarSync";
+import { useSheetNavigation } from "../../../../hooks/ui/useSheetNavigation";
 import { useSaveShift, useDeleteShift } from "../../../../hooks/shifts/useShiftMutations";
 import {
   useDeleteUnavailability,
@@ -47,6 +49,8 @@ function EventEditActions({
   startHour,
   startMinute,
   duration,
+  members,
+  calendarEventId,
   onError,
 }: {
   target: EditTarget;
@@ -54,14 +58,17 @@ function EventEditActions({
   startHour: number;
   startMinute: number;
   duration: number;
+  members: FamilyMember[];
+  calendarEventId: string | null;
   onError: (message: string) => void;
 }) {
-  const navigate = useNavigate();
+  const { openSheet } = useSheetNavigation();
   const dismiss = useSheetDismiss();
   const saveShift = useSaveShift();
   const deleteShift = useDeleteShift();
   const updateUnavail = useUpdateUnavailability();
   const deleteUnavail = useDeleteUnavailability();
+  const { syncAfterSave, removeBeforeDelete } = useShiftCalendarSync();
 
   const pending =
     saveShift.isPending ||
@@ -73,7 +80,7 @@ function EventEditActions({
     onError("");
     try {
       if (target.kind === "shift") {
-        await saveShift.mutateAsync({
+        const saved = await saveShift.mutateAsync({
           id: target.data.id,
           input: {
             assigned_member_id: memberId,
@@ -84,6 +91,10 @@ function EventEditActions({
             notes: target.data.notes,
             status: target.data.status,
           },
+        });
+        await syncAfterSave(saved, members, {
+          shiftId: target.data.id,
+          calendarEventId,
         });
       } else {
         await updateUnavail.mutateAsync({
@@ -108,6 +119,7 @@ function EventEditActions({
     onError("");
     try {
       if (target.kind === "shift") {
+        await removeBeforeDelete(calendarEventId);
         await deleteShift.mutateAsync(target.data.id);
       } else {
         await deleteUnavail.mutateAsync(target.data.id);
@@ -121,7 +133,7 @@ function EventEditActions({
 
   const onOpenFullForm = () => {
     if (target.kind === "shift") {
-      navigate(ROUTES.shiftEdit(target.data.id));
+      openSheet(ROUTES.shiftEdit(target.data.id));
       dismiss("press");
     }
   };
@@ -159,7 +171,12 @@ function EventEditSheetBody({
   const [startHour, setStartHour] = useState(initial.startHour);
   const [startMinute, setStartMinute] = useState(initial.startMinute);
   const [duration, setDuration] = useState<number>(initial.duration);
+  const [calendarEventId, setCalendarEventId] = useState<string | null>(
+    target.kind === "shift" ? target.data.calendar_event_id : null,
+  );
+  const [calendarPending, setCalendarPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { connected: calendarConnected, unsyncShift, resyncShift } = useShiftCalendarSync();
 
   const targetKey = `${target.kind}:${target.data.id}`;
 
@@ -171,12 +188,48 @@ function EventEditSheetBody({
       setStartHour(next.startHour);
       setStartMinute(next.startMinute);
       setDuration(next.duration);
+      setCalendarEventId(target.kind === "shift" ? target.data.calendar_event_id : null);
       setError(null);
     });
     return () => window.cancelAnimationFrame(frame);
   }, [open, targetKey, target]);
 
   const title = target.kind === "shift" ? "Edit shift" : "Edit unavailability";
+
+  const onUnsync = async () => {
+    if (target.kind !== "shift" || !calendarEventId) return;
+    setError(null);
+    setCalendarPending(true);
+    try {
+      await unsyncShift(target.data.id, calendarEventId);
+      setCalendarEventId(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not remove from calendar");
+    } finally {
+      setCalendarPending(false);
+    }
+  };
+
+  const onResync = async () => {
+    if (target.kind !== "shift") return;
+    setError(null);
+    setCalendarPending(true);
+    try {
+      const shift: Shift = {
+        ...target.data,
+        assigned_member_id: memberId,
+        start_hour: startHour,
+        start_minute: startMinute,
+        duration_minutes: duration,
+      };
+      const eventId = await resyncShift(shift, members);
+      setCalendarEventId(eventId);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not add to calendar");
+    } finally {
+      setCalendarPending(false);
+    }
+  };
 
   return (
     <BottomSheet
@@ -190,6 +243,8 @@ function EventEditSheetBody({
           startHour={startHour}
           startMinute={startMinute}
           duration={duration}
+          members={members}
+          calendarEventId={calendarEventId}
           onError={(message) => setError(message || null)}
         />
       }
@@ -223,6 +278,16 @@ function EventEditSheetBody({
           value={duration}
           onChange={(e) => setDuration(Number(e.target.value))}
         />
+        {target.kind === "shift" ? (
+          <ShiftCalendarSyncControl
+            calendarConnected={calendarConnected}
+            isNew={false}
+            synced={Boolean(calendarEventId)}
+            pending={calendarPending}
+            onUnsync={() => void onUnsync()}
+            onResync={() => void onResync()}
+          />
+        ) : null}
         {error ? <p className="error-text">{error}</p> : null}
       </Stack>
     </BottomSheet>

@@ -104,7 +104,7 @@ export function SettingsPage() {
   }
 
   return (
-    <Stack gap="lg" stagger>
+    <Stack gap="lg" staggerFromEdge="end">
       <ThemePicker />
 
       <section>

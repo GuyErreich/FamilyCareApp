@@ -3,6 +3,7 @@ import { NavLink, useLocation } from "react-router-dom";
 import { CalendarDays, Home, Settings, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { ROUTES } from "../../../lib/constants";
+import { NAV_DIRECTION_CLEAR_MS } from "../../../lib/motion";
 
 const links: { to: string; label: string; icon: LucideIcon; end?: boolean }[] = [
   { to: ROUTES.dashboard, label: "Home", icon: Home, end: true },
@@ -99,7 +100,7 @@ export function TabBarNav() {
             onClick={() => {
               hapticTap();
               setNavDirection(activeIndex, index);
-              window.setTimeout(clearNavDirection, 320);
+              window.setTimeout(clearNavDirection, NAV_DIRECTION_CLEAR_MS);
             }}
           >
             <Icon className="tab-bar__icon" aria-hidden />

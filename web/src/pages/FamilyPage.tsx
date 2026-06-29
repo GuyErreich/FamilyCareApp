@@ -44,7 +44,7 @@ export function FamilyPage() {
           Add your first companion below.
         </EmptyState>
       ) : (
-        <div className="family-grid stack--stagger">
+        <Stack staggerFromEdge="end" className="family-grid">
           {members.map((member) => (
             <Card
               key={member.id}
@@ -60,7 +60,7 @@ export function FamilyPage() {
               </div>
             </Card>
           ))}
-        </div>
+        </Stack>
       )}
 
       <Card variant="accent">

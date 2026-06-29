@@ -4,6 +4,7 @@ import { Card } from "../components/ui/common/Card";
 import { Stack } from "../components/ui/common/Stack";
 import { MemberAvatar } from "../components/ui/common/MemberAvatar";
 import { EmptyState, ErrorState, LoadingState } from "../components/ui/common/AsyncStates";
+import { useSheetNavigation } from "../hooks/ui/useSheetNavigation";
 import { ROUTES } from "../lib/constants";
 import { formatError } from "../lib/errors";
 import { formatShiftRange, toDateKey } from "../lib/dates";
@@ -14,6 +15,7 @@ import {
 } from "../hooks/family/useFamilyData";
 
 export function DashboardPage() {
+  const { openSheet } = useSheetNavigation();
   const navigate = useNavigate();
   const today = toDateKey(new Date());
   const shiftsQuery = useShifts(today, today);
@@ -75,7 +77,7 @@ export function DashboardPage() {
           Tap + to schedule a companion shift.
         </EmptyState>
       ) : (
-        <Stack stagger>
+        <Stack staggerFromEdge="start">
           {shifts.map((shift) => {
             const member = membersById.get(shift.assigned_member_id);
             return (
@@ -84,7 +86,7 @@ export function DashboardPage() {
                 interactive
                 className="shift-chip"
                 style={{ ["--chip-color" as string]: member?.color_hex }}
-                onClick={() => navigate(ROUTES.shiftEdit(shift.id))}
+                onClick={() => openSheet(ROUTES.shiftEdit(shift.id))}
               >
                 <div className="shift-card">
                   <MemberAvatar name={member?.name ?? "Companion"} colorHex={member?.color_hex} />

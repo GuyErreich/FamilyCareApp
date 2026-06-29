@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Button, SheetCloseButton } from "../../common/Button";
 import { BottomSheet } from "../../common/BottomSheet";
 import { useSheetDismiss } from "../../common/sheetDismissContext";
 import { MemberChipPicker } from "../../common/MemberChipPicker";
 import { SegmentedControl } from "../../common/SegmentedControl";
+import { useSheetNavigation } from "../../../../hooks/ui/useSheetNavigation";
 import type { FamilyMember } from "../../../../lib/database.types";
 import { ROUTES, SCHEDULE } from "../../../../lib/constants";
 import { toDateKey } from "../../../../lib/dates";
@@ -38,7 +38,7 @@ function ScheduleSlotActions({
   hour: number;
   minute: number;
 }) {
-  const navigate = useNavigate();
+  const { openSheet } = useSheetNavigation();
   const dismiss = useSheetDismiss();
   const createUnavail = useCreateUnavailability();
   const [error, setError] = useState<string | null>(null);
@@ -46,7 +46,7 @@ function ScheduleSlotActions({
   const onContinue = async () => {
     setError(null);
     if (action === "shift") {
-      navigate(`${ROUTES.shiftNew}?date=${dateKey}&hour=${hour}&minute=${minute}`);
+      openSheet(`${ROUTES.shiftNew}?date=${dateKey}&hour=${hour}&minute=${minute}`);
       dismiss("press");
       return;
     }

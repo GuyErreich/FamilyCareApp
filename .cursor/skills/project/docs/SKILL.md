@@ -38,4 +38,4 @@ Load `foundations/engineering` when documenting architecture boundaries.
 
 ## Skill changes
 
-When adding skills, follow `.cursor/PLUGIN.md` inheritance layout and `meta/improvement-protocol`.
+When adding skills, follow `.cursor/PLUGIN.md` inheritance layout and `~/.cursor/skills/meta/improvement-protocol`.

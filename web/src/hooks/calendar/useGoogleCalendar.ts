@@ -117,19 +117,17 @@ export function useGoogleCalendar() {
       const body = buildEventBody(shift, member, familyName, grandpaName);
 
       if (shift.calendar_event_id) {
-        const response = await fetch(`${CALENDAR_API}/${shift.calendar_event_id}`, {
-          method: "PATCH",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(body),
+        const deleteResponse = await fetch(`${CALENDAR_API}/${shift.calendar_event_id}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
         });
-        if (!response.ok) {
-          throw new Error(await response.text());
+        if (
+          !deleteResponse.ok &&
+          deleteResponse.status !== 404 &&
+          deleteResponse.status !== 410
+        ) {
+          throw new Error(await deleteResponse.text());
         }
-        const json = (await response.json()) as { id: string };
-        return json.id;
       }
 
       const response = await fetch(CALENDAR_API, {

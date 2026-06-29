@@ -1,6 +1,6 @@
 import type { FormEvent } from "react";
 import { useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { ErrorState, LoadingState } from "../components/ui/common/AsyncStates";
 import { Button } from "../components/ui/common/Button";
 import { Card } from "../components/ui/common/Card";
@@ -9,16 +9,16 @@ import { FormPage } from "../components/ui/common/FormPage";
 import { FormStack } from "../components/ui/common/FormStack";
 import { MemberChipPicker } from "../components/ui/common/MemberChipPicker";
 import { TextArea, TextInput } from "../components/ui/common/TextField";
-import { useGoogleCalendar } from "../hooks/calendar/useGoogleCalendar";
+import { ShiftCalendarSyncControl } from "../components/ui/schedule/common/ShiftCalendarSyncControl";
+import { useShiftCalendarSync } from "../hooks/calendar/useShiftCalendarSync";
+import { useSheetNavigation } from "../hooks/ui/useSheetNavigation";
 import {
-  useFamily,
   useFamilyMembers,
   useShift,
 } from "../hooks/family/useFamilyData";
 import { useDeleteShift, useSaveShift } from "../hooks/shifts/useShiftMutations";
 import type { FamilyMember, Shift } from "../lib/database.types";
-import { ROUTES, SCHEDULE } from "../lib/constants";
-import { supabase } from "../lib/supabase";
+import { SCHEDULE } from "../lib/constants";
 
 interface ShiftFormValues {
   assignedMemberId: string;
@@ -27,7 +27,6 @@ interface ShiftFormValues {
   startMinute: number;
   duration: number;
   notes: string;
-  syncToCalendar: boolean;
 }
 
 function buildNewShiftValues(params: URLSearchParams): ShiftFormValues {
@@ -38,7 +37,6 @@ function buildNewShiftValues(params: URLSearchParams): ShiftFormValues {
     startMinute: Number(params.get("minute") ?? 0),
     duration: SCHEDULE.defaultDurationMinutes,
     notes: "",
-    syncToCalendar: false,
   };
 }
 
@@ -50,7 +48,6 @@ function buildEditShiftValues(shift: Shift): ShiftFormValues {
     startMinute: shift.start_minute,
     duration: shift.duration_minutes,
     notes: shift.notes ?? "",
-    syncToCalendar: Boolean(shift.calendar_event_id),
   };
 }
 
@@ -58,21 +55,19 @@ function ShiftFormFields({
   shiftId,
   initialValues,
   members,
-  familyName,
-  grandpaName,
   calendarConnected,
+  initialCalendarEventId,
 }: {
   shiftId?: string;
   initialValues: ShiftFormValues;
   members: FamilyMember[];
-  familyName?: string;
-  grandpaName?: string;
   calendarConnected: boolean;
+  initialCalendarEventId?: string | null;
 }) {
-  const navigate = useNavigate();
+  const { closeSheet } = useSheetNavigation();
   const saveShift = useSaveShift();
   const deleteShift = useDeleteShift();
-  const calendar = useGoogleCalendar();
+  const { syncAfterSave, removeBeforeDelete, unsyncShift, resyncShift } = useShiftCalendarSync();
 
   const defaultMember = useMemo(() => members?.[0]?.id ?? "", [members]);
   const [assignedMemberId, setAssignedMemberId] = useState(
@@ -83,10 +78,33 @@ function ShiftFormFields({
   const [startMinute, setStartMinute] = useState(initialValues.startMinute);
   const [duration, setDuration] = useState(initialValues.duration);
   const [notes, setNotes] = useState(initialValues.notes);
-  const [syncToCalendar, setSyncToCalendar] = useState(initialValues.syncToCalendar);
+  const [calendarEventId, setCalendarEventId] = useState(initialCalendarEventId ?? null);
+  const [calendarPending, setCalendarPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const memberId = assignedMemberId || defaultMember;
+  const calendarSynced = Boolean(calendarEventId);
+
+  const buildShiftSnapshot = (): Shift | null => {
+    if (!shiftId) return null;
+    return {
+      id: shiftId,
+      family_id: "",
+      assigned_member_id: memberId,
+      shift_date: shiftDate,
+      start_hour: startHour,
+      start_minute: startMinute,
+      duration_minutes: duration,
+      end_time: "",
+      notes: notes || null,
+      status: "scheduled",
+      reminder_offset_minutes: [],
+      repeat_rule: null,
+      calendar_event_id: calendarEventId,
+      created_at: "",
+      updated_at: "",
+    };
+  };
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -104,18 +122,8 @@ function ShiftFormFields({
         },
       });
 
-      if (syncToCalendar && calendarConnected) {
-        const member = members.find((m) => m.id === memberId);
-        await calendar.syncShift(saved, member, familyName, grandpaName);
-      } else if (!syncToCalendar && saved.calendar_event_id) {
-        await calendar.deleteEvent(saved.calendar_event_id);
-        await supabase
-          .from("shifts")
-          .update({ calendar_event_id: null })
-          .eq("id", saved.id);
-      }
-
-      navigate(ROUTES.calendar);
+      await syncAfterSave(saved, members, { shiftId, calendarEventId });
+      closeSheet();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }
@@ -125,16 +133,40 @@ function ShiftFormFields({
     if (!shiftId) return;
     setError(null);
     try {
-      if (initialValues.syncToCalendar && calendarConnected) {
-        const eventId = (
-          await supabase.from("shifts").select("calendar_event_id").eq("id", shiftId).single()
-        ).data?.calendar_event_id;
-        if (eventId) await calendar.deleteEvent(eventId);
-      }
+      await removeBeforeDelete(calendarEventId);
       await deleteShift.mutateAsync(shiftId);
-      navigate(ROUTES.calendar);
+      closeSheet();
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
+    }
+  };
+
+  const onUnsync = async () => {
+    if (!shiftId || !calendarEventId) return;
+    setError(null);
+    setCalendarPending(true);
+    try {
+      await unsyncShift(shiftId, calendarEventId);
+      setCalendarEventId(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setCalendarPending(false);
+    }
+  };
+
+  const onResync = async () => {
+    const shift = buildShiftSnapshot();
+    if (!shift) return;
+    setError(null);
+    setCalendarPending(true);
+    try {
+      const eventId = await resyncShift(shift, members);
+      setCalendarEventId(eventId);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setCalendarPending(false);
     }
   };
 
@@ -183,26 +215,20 @@ function ShiftFormFields({
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
           />
-          {calendarConnected ? (
-            <label className="field field--inline">
-              <input
-                type="checkbox"
-                checked={syncToCalendar}
-                onChange={(e) => setSyncToCalendar(e.target.checked)}
-              />
-              <span className="field__label field__label--inline">
-                Sync to Google Calendar when saved
-              </span>
-            </label>
-          ) : (
-            <p className="muted">Connect Google Calendar in Settings to sync shifts.</p>
-          )}
+          <ShiftCalendarSyncControl
+            calendarConnected={calendarConnected}
+            isNew={!shiftId}
+            synced={calendarSynced}
+            pending={calendarPending}
+            onUnsync={() => void onUnsync()}
+            onResync={() => void onResync()}
+          />
           {error ? <ErrorState message={error} /> : null}
         </FormStack>
       </Card>
 
       <FormActionBar>
-        <Button variant="secondary" onClick={() => navigate(ROUTES.calendar)}>
+        <Button variant="secondary" onClick={closeSheet}>
           Cancel
         </Button>
         {shiftId ? (
@@ -230,9 +256,8 @@ function ShiftFormFields({
 export function ShiftFormPage({ shiftId }: { shiftId?: string }) {
   const [params] = useSearchParams();
   const membersQuery = useFamilyMembers();
-  const familyQuery = useFamily();
   const shiftQuery = useShift(shiftId);
-  const calendar = useGoogleCalendar();
+  const { connected: calendarConnected } = useShiftCalendarSync();
 
   if (membersQuery.isLoading || (shiftId && shiftQuery.isLoading)) {
     return <LoadingState label="Loading shift…" />;
@@ -254,9 +279,8 @@ export function ShiftFormPage({ shiftId }: { shiftId?: string }) {
       shiftId={shiftId}
       initialValues={initialValues}
       members={members}
-      familyName={familyQuery.data?.name}
-      grandpaName={familyQuery.data?.grandpa_name}
-      calendarConnected={calendar.connected}
+      calendarConnected={calendarConnected}
+      initialCalendarEventId={shiftQuery.data?.calendar_event_id}
     />
   );
 }

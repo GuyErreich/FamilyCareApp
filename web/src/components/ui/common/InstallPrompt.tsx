@@ -21,7 +21,7 @@ function isStandalone(): boolean {
   );
 }
 
-export function InstallPrompt() {
+export function useInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(null);
   const [dismissed, setDismissed] = useState(
@@ -37,8 +37,6 @@ export function InstallPrompt() {
     return () => window.removeEventListener("beforeinstallprompt", handler);
   }, []);
 
-  if (dismissed || isStandalone()) return null;
-
   const dismiss = () => {
     localStorage.setItem("pwa-install-dismissed", "1");
     setDismissed(true);
@@ -52,6 +50,24 @@ export function InstallPrompt() {
     dismiss();
   };
 
+  const visible = !dismissed && !isStandalone();
+
+  return { visible, deferredPrompt, dismiss, install };
+}
+
+export type InstallPromptState = ReturnType<typeof useInstallPrompt>;
+
+interface InstallPromptCardProps {
+  deferredPrompt: BeforeInstallPromptEvent | null;
+  onDismiss: () => void;
+  onInstall: () => void;
+}
+
+export function InstallPromptCard({
+  deferredPrompt,
+  onDismiss,
+  onInstall,
+}: InstallPromptCardProps) {
   return (
     <Card className="install-prompt" variant="accent">
       <div className="install-prompt__header">
@@ -59,7 +75,7 @@ export function InstallPrompt() {
           <Download size={22} aria-hidden />
         </span>
         <strong>Install the app</strong>
-        <IconButton icon={X} label="Dismiss install prompt" variant="ghost" onClick={dismiss} />
+        <IconButton icon={X} label="Dismiss install prompt" variant="ghost" onClick={onDismiss} />
       </div>
       {isIos() || !deferredPrompt ? (
         <p className="muted">
@@ -72,10 +88,23 @@ export function InstallPrompt() {
         </p>
       )}
       {deferredPrompt ? (
-        <Button icon={Download} onClick={() => void install()}>
+        <Button icon={Download} onClick={onInstall}>
           Install
         </Button>
       ) : null}
     </Card>
+  );
+}
+
+/** @deprecated Use InstallPromptOverlay in AppShell */
+export function InstallPrompt() {
+  const prompt = useInstallPrompt();
+  if (!prompt.visible) return null;
+  return (
+    <InstallPromptCard
+      deferredPrompt={prompt.deferredPrompt}
+      onDismiss={prompt.dismiss}
+      onInstall={() => void prompt.install()}
+    />
   );
 }

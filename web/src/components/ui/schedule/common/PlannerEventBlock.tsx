@@ -1,7 +1,9 @@
-import type { KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { motion, useAnimation, useReducedMotion } from "framer-motion";
 import { Check } from "lucide-react";
 import { usePlannerPointerGesture } from "../../../../hooks/schedule/usePlannerPointerGesture";
 import { SCHEDULE } from "../../../../lib/constants";
+import { MARK_BOUNCE_SPRING, PLANNER_DRAG_SPRING } from "../../../../lib/motion";
 import { formatTimeRange } from "../../../../lib/slotOverlap";
 
 export type PlannerItemKind = "shift" | "unavail";
@@ -52,6 +54,44 @@ export function PlannerEventBlock({
   onDragMove,
   onDragEnd,
 }: PlannerEventBlockProps) {
+  const reduceMotion = useReducedMotion();
+  const controls = useAnimation();
+  const wasMarkedRef = useRef(marked);
+  const [markPulse, setMarkPulse] = useState(0);
+
+  useEffect(() => {
+    if (marked && !wasMarkedRef.current) {
+      setMarkPulse((value) => value + 1);
+      navigator.vibrate?.(8);
+    }
+    wasMarkedRef.current = marked;
+  }, [marked]);
+
+  useEffect(() => {
+    if (isDragging) {
+      void controls.start({
+        scale: reduceMotion ? 1 : 1.06,
+        filter: reduceMotion ? "brightness(1)" : "brightness(1.05)",
+        transition: reduceMotion ? { duration: 0.12 } : PLANNER_DRAG_SPRING,
+      });
+      return;
+    }
+
+    void controls.start({
+      scale: 1,
+      filter: "brightness(1)",
+      transition: { duration: 0.14, ease: [0.33, 1, 0.68, 1] },
+    });
+  }, [isDragging, reduceMotion, controls]);
+
+  useEffect(() => {
+    if (reduceMotion || isDragging || markPulse === 0) return;
+    void controls.start({
+      scale: [1.045, 0.985, 1],
+      transition: MARK_BOUNCE_SPRING,
+    });
+  }, [markPulse, reduceMotion, isDragging, controls]);
+
   const { handlers } = usePlannerPointerGesture({
     onTap: () => onTap(event),
     onLongPress: () => onLongPress(event),
@@ -73,7 +113,7 @@ export function PlannerEventBlock({
   };
 
   return (
-    <div
+    <motion.div
       role="button"
       tabIndex={0}
       aria-label={`${event.label}, ${timeLabel}`}
@@ -92,6 +132,7 @@ export function PlannerEventBlock({
         height: Math.max(height, 28),
         ["--event-color" as string]: event.color,
       }}
+      animate={controls}
       onKeyDown={onKeyDown}
       {...handlers}
     >
@@ -105,7 +146,7 @@ export function PlannerEventBlock({
           <Check size={14} strokeWidth={3} />
         </span>
       ) : null}
-    </div>
+    </motion.div>
   );
 }
 

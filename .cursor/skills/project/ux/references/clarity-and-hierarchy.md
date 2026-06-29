@@ -28,3 +28,4 @@
 
 - Care scheduling is information-dense — prefer clear grid lines and hour bands over decorative containers
 - Padding: 16px screen edges for text; 0 for full-bleed grids
+- **Motion clip boundary:** horizontal inset belongs on inner content (`.page-viewport__content`), not on the clipping ancestor — see `project/ui-interactions/references/shell-viewport-motion.md`

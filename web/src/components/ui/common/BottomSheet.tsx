@@ -1,5 +1,6 @@
-import { useCallback, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, type ReactNode } from "react";
 import { Drawer } from "vaul";
+import { playMenuCloseSound, playMenuOpenSound } from "../../../lib/sound/interactionSounds";
 import { SheetDismissContext, type DismissMode } from "./sheetDismissContext";
 
 const PRESS_FEEDBACK_MS = 160;
@@ -13,6 +14,18 @@ interface BottomSheetProps {
 }
 
 export function BottomSheet({ open, onClose, title, children, actions }: BottomSheetProps) {
+  const wasOpenRef = useRef(open);
+
+  useEffect(() => {
+    if (open && !wasOpenRef.current) {
+      playMenuOpenSound();
+    }
+    if (!open && wasOpenRef.current) {
+      playMenuCloseSound();
+    }
+    wasOpenRef.current = open;
+  }, [open]);
+
   const dismiss = useCallback(
     (mode: DismissMode = "immediate") => {
       const close = () => onClose();

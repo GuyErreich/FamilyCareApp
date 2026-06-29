@@ -39,10 +39,11 @@ Project: [family-care-scheduler-dev](https://console.cloud.google.com/?project=f
 1. **Enable Calendar API**  
    [Calendar API → Enable](https://console.cloud.google.com/apis/library/calendar-json.googleapis.com?project=family-care-scheduler-dev)
 
-2. **OAuth consent screen** (APIs & Services → OAuth consent screen)  
+2. **Google Auth Platform** (APIs & Services → OAuth consent screen)  
    - User type: **External** (or Internal if Workspace)  
-   - Add scopes: `email`, `profile`, `openid`, and **`.../auth/calendar`**  
-   - Add test users (your family Gmail addresses) while app is in **Testing**
+   - **Data Access** → add scopes: `email`, `profile`, `openid`, and **`https://www.googleapis.com/auth/calendar`**  
+   - **Audience** → stay in **Testing** for private/family use; add family Gmail addresses under **Test users**  
+   - For Production and Google verification requirements, see **[docs/google-oauth.md](docs/google-oauth.md)**
 
 3. **OAuth 2.0 Client ID** (Credentials → Web application)  
    Reuse existing Web client or create one.
@@ -77,7 +78,7 @@ Google is enabled in `supabase/config.toml` under `[auth.external.google]`.
 
 1. **Sign in** → Login → **Continue with Google** (identity only)  
 2. **Settings** → **Connect Google Calendar** (adds calendar scope; pick account + Allow)  
-3. **New/edit shift** → check **Sync to Google Calendar when saved**
+3. **New/edit shift** → syncs to Google Calendar automatically when connected; use **Remove from Google Calendar** to unsync
 
 Email/password still works without Google. Calendar sync requires step 2 for each user who wants events on their calendar.
 
@@ -88,8 +89,9 @@ Email/password still works without Google. Calendar sync requires step 2 for eac
 | `provider is not enabled` | Restart Supabase after editing `supabase/.env` |
 | `invalid_client` / OAuth client not found | Client secret missing/wrong in `supabase/.env`, or wrong client type (must be **Web**) |
 | Calendar API disabled | Enable Calendar API in GCP (step A1) |
-| `access blocked` / app not verified | Add your Gmail under OAuth consent screen → Test users |
-| Sync fails after weeks | Reconnect in Settings (Google access tokens expire; reconnect refreshes) |
+| `access blocked` / app not verified | Use **Testing** mode; add Gmail under **Audience → Test users** (see [docs/google-oauth.md](docs/google-oauth.md)) |
+| Sync fails after ~7 days (Testing) | Google expires test-user Calendar tokens; reconnect in Settings |
+| Sync fails after weeks (verified) | Reconnect in Settings (access tokens expire; reconnect refreshes) |
 
 ### 2. Web app
 

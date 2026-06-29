@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import { forwardRef, useCallback, useImperativeHandle, useLayoutEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
+import { MICRO_TRANSITION } from "../../../lib/motion";
 
 const ITEM_HEIGHT = 44;
 const VISIBLE_ROWS = 5;
@@ -165,7 +166,7 @@ function WheelPickerInner<T extends string | number>(
                       scale: centered ? 1.04 : 1,
                     }
               }
-              transition={{ duration: 0.12, ease: [0.32, 0.72, 0, 1] }}
+              transition={MICRO_TRANSITION}
               onClick={() => {
                 onChange(option.value);
                 scrollToValue(option.value, "smooth");
