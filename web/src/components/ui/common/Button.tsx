@@ -1,9 +1,11 @@
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { motion, type HTMLMotionProps } from "framer-motion";
+import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
+import { useInteractiveMotion } from "../../../hooks/ui/useInteractiveMotion";
 import { useSheetDismiss } from "./sheetDismissContext";
 import { Spinner } from "./Spinner";
 
-export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+export interface ButtonProps extends Omit<HTMLMotionProps<"button">, "children"> {
   children: ReactNode;
   variant?: "primary" | "secondary" | "danger";
   loading?: boolean;
@@ -20,13 +22,21 @@ export function Button({
   className,
   disabled,
   type = "button",
+  onClick,
   ...props
 }: ButtonProps) {
+  const isDisabled = Boolean(disabled || loading);
+  const { motionProps, wrapClick } = useInteractiveMotion({
+    disabled: isDisabled,
+    tapScale: "button",
+  });
+
   return (
-    <button
+    <motion.button
       type={type}
       className={[
         "btn",
+        "motion-interactive",
         variant === "primary"
           ? "btn-primary"
           : variant === "danger"
@@ -37,12 +47,14 @@ export function Button({
       ]
         .filter(Boolean)
         .join(" ")}
-      disabled={disabled || loading}
+      disabled={isDisabled}
       {...props}
+      {...motionProps}
+      onClick={wrapClick(onClick)}
     >
       {loading ? <Spinner className="btn__spinner" /> : Icon ? <Icon size={18} aria-hidden /> : null}
       {children}
-    </button>
+    </motion.button>
   );
 }
 

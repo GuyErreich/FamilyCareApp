@@ -27,6 +27,7 @@ import {
 } from "../hooks/family/useFamilyData";
 import { usePushNotifications } from "../hooks/notifications/usePushNotifications";
 import { formatError } from "../lib/errors";
+import { clearCalendarConnectIntent, hasCalendarConnectIntent } from "../lib/googleCalendarTokens";
 
 export function SettingsPage() {
   const { profile, session, signOut } = useAuth();
@@ -52,11 +53,18 @@ export function SettingsPage() {
   }, [members, orderedIds]);
 
   useEffect(() => {
-    if (session?.provider_token && !profile?.google_calendar_connected) {
-      void calendar.markConnected.mutateAsync().catch((err: unknown) => {
+    if (!hasCalendarConnectIntent()) return;
+    if (!session?.provider_token || profile?.google_calendar_connected) return;
+
+    void calendar.markConnected
+      .mutateAsync()
+      .then(() => {
+        clearCalendarConnectIntent();
+      })
+      .catch((err: unknown) => {
+        clearCalendarConnectIntent();
         setCalendarError(formatError(err));
       });
-    }
   }, [session?.provider_token, profile?.google_calendar_connected, calendar.markConnected]);
 
   const move = async (index: number, direction: -1 | 1) => {
@@ -209,7 +217,9 @@ export function SettingsPage() {
             label="Google Calendar"
             value={
               calendar.connected
-                ? "Connected — toggle sync when saving shifts"
+                ? calendar.hasProviderToken
+                  ? "Connected — toggle sync when saving shifts"
+                  : "Connected — reconnect to refresh calendar access"
                 : "Connect to sync companion shifts"
             }
           />

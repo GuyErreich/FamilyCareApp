@@ -46,7 +46,15 @@ export function PageTransition({ className }: { className?: string }) {
   };
 
   return (
-    <div className={["page-viewport", className].filter(Boolean).join(" ")}>
+    <div
+      className={[
+        "page-viewport",
+        isFormRoute ? "page-viewport--sheet-host" : "",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
       <AnimatePresence mode="wait" initial={false} custom={direction}>
         {outlet ? (
           <motion.div

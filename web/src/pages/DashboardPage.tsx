@@ -73,8 +73,10 @@ export function DashboardPage() {
         <EmptyState
           icon={CalendarOff}
           title="No shifts today"
+          actionLabel="Add shift"
+          onAction={() => openSheet(ROUTES.shiftNew)}
         >
-          Tap + to schedule a companion shift.
+          Or tap + to schedule a companion shift.
         </EmptyState>
       ) : (
         <Stack staggerFromEdge="start">

@@ -51,6 +51,43 @@ tasks:
     cmds:
       - supabase stop
 
+  supabase:linked:
+    desc: Show whether CLI is linked to a hosted project
+    cmds:
+      - |
+        if [ -f supabase/.temp/project-ref ]; then
+          echo "Linked project ref: $(cat supabase/.temp/project-ref)"
+        else
+          echo "Not linked. Run: supabase link --project-ref <ref>"
+          echo "See docs/supabase-hosted.md"
+          exit 1
+        fi
+
+  supabase:push:
+    desc: Push migrations to the linked hosted project
+    cmds:
+      - supabase db push
+
+  supabase:push:dry-run:
+    desc: Show migrations that would be pushed to hosted project
+    cmds:
+      - supabase db push --dry-run
+
+  supabase:functions:deploy:
+    desc: Deploy Edge Functions to the linked hosted project
+    cmds:
+      - supabase functions deploy on-shift-change
+
+  supabase:auth:google:
+    desc: Sync Google OAuth from supabase/.env to linked hosted project (config push)
+    cmds:
+      - bash scripts/supabase-auth-google.sh
+
+  supabase:auth:google:local:
+    desc: Restart local Supabase after supabase/.env Google credential changes
+    cmds:
+      - LOCAL=1 bash scripts/supabase-auth-google.sh
+
   deploy:pages:
     desc: Deploy web/dist to Cloudflare Pages
     deps: [web:build]

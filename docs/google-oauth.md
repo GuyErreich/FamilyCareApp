@@ -62,8 +62,8 @@ Use Production when you are ready to complete **OAuth app verification** (below)
 
 | Environment | Authorized redirect URI |
 |-------------|-------------------------|
-| Local Supabase | `http://127.0.0.1:54321/auth/v1/callback` |
 | Hosted Supabase | `https://<project-ref>.supabase.co/auth/v1/callback` |
+| Local Supabase | `http://127.0.0.1:54321/auth/v1/callback` |
 
 ### JavaScript origins
 
@@ -73,6 +73,8 @@ Use Production when you are ready to complete **OAuth app verification** (below)
 | Production | `https://<your-pages-domain>` |
 
 ### Supabase secrets
+
+Hosted: Dashboard → **Authentication → Providers → Google** (Client ID + Secret).
 
 Local: `supabase/.env` → `SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID`, `SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET`. Restart: `supabase stop && supabase start`.
 

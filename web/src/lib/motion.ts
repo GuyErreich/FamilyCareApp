@@ -94,6 +94,9 @@ export const SHEET_EXIT_TRANSITION: Transition = {
   ease: EASE_IN,
 };
 
+/** Keep bottom-sheet content mounted through Vaul exit animation. */
+export const SHEET_EXIT_CLEAR_MS = 380;
+
 /** @deprecated Use EXIT_TRANSITION / ENTER_TRANSITION */
 export const NAV_EXIT_TRANSITION = EXIT_TRANSITION;
 /** @deprecated Use ENTER_TRANSITION */

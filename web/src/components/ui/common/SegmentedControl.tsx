@@ -1,3 +1,6 @@
+import { motion } from "framer-motion";
+import { useInteractiveMotion } from "../../../hooks/ui/useInteractiveMotion";
+
 interface SegmentedOption<T extends string> {
   value: T;
   label: string;
@@ -11,6 +14,42 @@ interface SegmentedControlProps<T extends string> {
   ariaLabel: string;
 }
 
+function SegmentOptionButton<T extends string>({
+  option,
+  selected,
+  onSelect,
+}: {
+  option: SegmentedOption<T>;
+  selected: boolean;
+  onSelect: (value: T) => void;
+}) {
+  const { motionProps, wrapClick } = useInteractiveMotion({
+    disabled: Boolean(option.disabled),
+    tapScale: "chip",
+    hover: "none",
+  });
+
+  return (
+    <motion.button
+      type="button"
+      role="radio"
+      aria-checked={selected}
+      disabled={option.disabled}
+      className={[
+        "segmented-control__btn",
+        "motion-interactive",
+        selected ? "segmented-control__btn--active" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      onClick={wrapClick(() => onSelect(option.value))}
+      {...motionProps}
+    >
+      {option.label}
+    </motion.button>
+  );
+}
+
 export function SegmentedControl<T extends string>({
   value,
   onChange,
@@ -20,22 +59,12 @@ export function SegmentedControl<T extends string>({
   return (
     <div className="segmented-control" role="radiogroup" aria-label={ariaLabel}>
       {options.map((option) => (
-        <button
+        <SegmentOptionButton
           key={option.value}
-          type="button"
-          role="radio"
-          aria-checked={value === option.value}
-          disabled={option.disabled}
-          className={[
-            "segmented-control__btn",
-            value === option.value ? "segmented-control__btn--active" : "",
-          ]
-            .filter(Boolean)
-            .join(" ")}
-          onClick={() => onChange(option.value)}
-        >
-          {option.label}
-        </button>
+          option={option}
+          selected={value === option.value}
+          onSelect={onChange}
+        />
       ))}
     </div>
   );

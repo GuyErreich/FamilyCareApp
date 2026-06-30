@@ -24,11 +24,11 @@ npm run test
 
 Copy `.env.example` to `.env.local`:
 
-- `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_ANON_KEY`
+- `VITE_SUPABASE_URL` — hosted: `https://<ref>.supabase.co`; local: `http://127.0.0.1:54321`
+- `VITE_SUPABASE_ANON_KEY` — from Dashboard → Settings → API (hosted) or `supabase start` (local)
 - `VITE_VAPID_PUBLIC_KEY` (optional, for Web Push)
 
-Local Supabase defaults are in `.env.example` after `supabase start`.
+Hosted setup: [docs/supabase-hosted.md](../docs/supabase-hosted.md).
 
 ## Layout
 

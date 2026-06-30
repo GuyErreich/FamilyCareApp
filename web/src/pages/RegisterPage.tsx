@@ -64,7 +64,7 @@ export function RegisterPage() {
             {loading ? "Creating…" : "Register"}
           </Button>
         </FormStack>
-        <p className="muted" style={{ marginTop: 16, marginBottom: 0 }}>
+        <p className="muted auth-layout__footer">
           Already have an account? <Link to={ROUTES.login}>Sign in</Link>
         </p>
       </Card>

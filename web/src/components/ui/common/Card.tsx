@@ -1,4 +1,6 @@
+import { motion } from "framer-motion";
 import type { ReactNode } from "react";
+import { useInteractiveMotion } from "../../../hooks/ui/useInteractiveMotion";
 
 interface CardProps {
   children: ReactNode;
@@ -17,20 +19,32 @@ export function Card({
   interactive,
   onClick,
 }: CardProps) {
+  const isInteractive = Boolean(interactive || onClick);
+  const { motionProps, wrapClick } = useInteractiveMotion({
+    tapScale: "card",
+    hover: isInteractive ? "card" : "none",
+  });
+
   const classes = [
     "card",
     variant === "accent" ? "card--accent" : "",
-    interactive ? "card--interactive" : "",
+    isInteractive ? "card--interactive motion-interactive" : "",
     className,
   ]
     .filter(Boolean)
     .join(" ");
 
-  if (interactive || onClick) {
+  if (isInteractive) {
     return (
-      <button type="button" className={classes} style={style} onClick={onClick}>
+      <motion.button
+        type="button"
+        className={classes}
+        style={style}
+        onClick={wrapClick(onClick ? () => onClick() : undefined)}
+        {...motionProps}
+      >
         {children}
-      </button>
+      </motion.button>
     );
   }
 

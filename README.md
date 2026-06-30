@@ -98,20 +98,45 @@ Email/password still works without Google. Calendar sync requires step 2 for eac
 ```bash
 cd web
 cp .env.example .env.local
-# Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY from supabase start output
+# Hosted: set URL + anon key from Supabase Dashboard → Settings → API
+# Local:  use http://127.0.0.1:54321 + key from supabase start
 npm install
 npm run dev
 ```
 
 Open http://localhost:5173
 
-### 3. Hosted Supabase (production)
+**WSL + Cursor:** clicking the terminal link may open Cursor's built-in browser on port **5174** instead of 5173. Use **Open in External Browser** (or paste the URL into Chrome/Edge) so you hit the real Vite server.
 
-1. Create a project at [supabase.com](https://supabase.com)
-2. Link and push migrations: `supabase link` then `supabase db push`
-3. Enable Auth providers (Email, Google) and add redirect URLs for your Cloudflare Pages domain
-4. Set Edge Function secrets (`VAPID_PRIVATE_KEY`, `VAPID_PUBLIC_KEY`) for Web Push
-5. Deploy the `on-shift-change` Edge Function
+### 3. Hosted Supabase
+
+Use a cloud project instead of (or alongside) local Docker. Full checklist: **[docs/supabase-hosted.md](docs/supabase-hosted.md)**.
+
+```bash
+supabase login
+supabase link --project-ref <your-project-ref>   # database password from project create
+task supabase:push                               # apply supabase/migrations/
+```
+
+Then set `web/.env.local` from **Dashboard → Settings → API**:
+
+```env
+VITE_SUPABASE_URL=https://<your-project-ref>.supabase.co
+VITE_SUPABASE_ANON_KEY=<publishable-or-anon-key>
+```
+
+Connect **GitHub** in the Supabase Dashboard (**Project Settings → Integrations**) to deploy migrations from this repo automatically.
+
+Enable **Google** under **Authentication → Providers** and configure redirect URLs (see [docs/google-oauth.md](docs/google-oauth.md)).
+
+Or sync from `supabase/.env` after credential changes:
+
+```bash
+task supabase:auth:google        # hosted (linked project)
+task supabase:auth:google:local  # local Docker stack
+```
+
+Deploy Edge Functions when ready: `task supabase:functions:deploy`
 
 ### 4. Cloudflare Pages
 
@@ -130,8 +155,8 @@ Public vars only (`VITE_*` in `web/.env.local`):
 
 | Variable | Purpose |
 |----------|---------|
-| `VITE_SUPABASE_URL` | Supabase project URL |
-| `VITE_SUPABASE_ANON_KEY` | Supabase anon key |
+| `VITE_SUPABASE_URL` | `https://<ref>.supabase.co` (hosted) or `http://127.0.0.1:54321` (local) |
+| `VITE_SUPABASE_ANON_KEY` | Publishable or anon key from Dashboard → Settings → API |
 | `VITE_VAPID_PUBLIC_KEY` | Web Push VAPID public key (PR5 push) |
 
 Never put service role keys or VAPID private keys in `VITE_*` vars.
@@ -161,7 +186,12 @@ task web:test      # Vitest
 task web:lint      # ESLint
 task web:check     # lint + test + build
 task supabase:start
-task deploy:pages  # Cloudflare Pages deploy
+task supabase:linked     # verify hosted link
+task supabase:push       # migrations → hosted DB
+task supabase:auth:google   # sync Google OAuth to hosted project
+task supabase:auth:google:local  # apply Google OAuth to local stack
+task supabase:functions:deploy
+task deploy:pages        # Cloudflare Pages deploy
 ```
 
 See `web/AGENTS.md` for client layout and `Taskfile.yml` for all tasks.

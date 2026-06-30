@@ -7,6 +7,12 @@ import { AuthProvider } from "./hooks/auth/useAuth";
 import { bootstrapThemePalette } from "./hooks/useThemePalette";
 import "./styles/base.css";
 
+if (import.meta.env.DEV && "serviceWorker" in navigator) {
+  void navigator.serviceWorker.getRegistrations().then((regs) => {
+    for (const reg of regs) void reg.unregister();
+  });
+}
+
 const queryClient = new QueryClient();
 
 bootstrapThemePalette();

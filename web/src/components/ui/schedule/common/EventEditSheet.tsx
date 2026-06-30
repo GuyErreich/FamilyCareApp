@@ -8,6 +8,7 @@ import { TextInput } from "../../common/TextField";
 import { ShiftCalendarSyncControl } from "./ShiftCalendarSyncControl";
 import type { FamilyMember, Shift, Unavailability } from "../../../../lib/database.types";
 import { ROUTES } from "../../../../lib/constants";
+import { SHEET_EXIT_CLEAR_MS } from "../../../../lib/motion";
 import { useShiftCalendarSync } from "../../../../hooks/calendar/useShiftCalendarSync";
 import { useSheetNavigation } from "../../../../hooks/ui/useSheetNavigation";
 import { useSaveShift, useDeleteShift } from "../../../../hooks/shifts/useShiftMutations";
@@ -133,8 +134,8 @@ function EventEditActions({
 
   const onOpenFullForm = () => {
     if (target.kind === "shift") {
-      openSheet(ROUTES.shiftEdit(target.data.id));
       dismiss("press");
+      openSheet(ROUTES.shiftEdit(target.data.id));
     }
   };
 
@@ -162,26 +163,26 @@ function EventEditSheetBody({
   onClose,
 }: {
   open: boolean;
-  target: EditTarget;
+  target: EditTarget | null;
   members: FamilyMember[];
   onClose: () => void;
 }) {
-  const initial = editInitials(target);
-  const [memberId, setMemberId] = useState(initial.memberId);
-  const [startHour, setStartHour] = useState(initial.startHour);
-  const [startMinute, setStartMinute] = useState(initial.startMinute);
-  const [duration, setDuration] = useState<number>(initial.duration);
+  const initial = target ? editInitials(target) : null;
+  const [memberId, setMemberId] = useState(initial?.memberId ?? "");
+  const [startHour, setStartHour] = useState(initial?.startHour ?? 9);
+  const [startMinute, setStartMinute] = useState(initial?.startMinute ?? 0);
+  const [duration, setDuration] = useState<number>(initial?.duration ?? 60);
   const [calendarEventId, setCalendarEventId] = useState<string | null>(
-    target.kind === "shift" ? target.data.calendar_event_id : null,
+    target?.kind === "shift" ? target.data.calendar_event_id : null,
   );
   const [calendarPending, setCalendarPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { connected: calendarConnected, unsyncShift, resyncShift } = useShiftCalendarSync();
 
-  const targetKey = `${target.kind}:${target.data.id}`;
+  const targetKey = target ? `${target.kind}:${target.data.id}` : null;
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || !target) return;
     const frame = window.requestAnimationFrame(() => {
       const next = editInitials(target);
       setMemberId(next.memberId);
@@ -194,10 +195,15 @@ function EventEditSheetBody({
     return () => window.cancelAnimationFrame(frame);
   }, [open, targetKey, target]);
 
-  const title = target.kind === "shift" ? "Edit shift" : "Edit unavailability";
+  const title =
+    target?.kind === "shift"
+      ? "Edit shift"
+      : target?.kind === "unavail"
+        ? "Edit unavailability"
+        : undefined;
 
   const onUnsync = async () => {
-    if (target.kind !== "shift" || !calendarEventId) return;
+    if (!target || target.kind !== "shift" || !calendarEventId) return;
     setError(null);
     setCalendarPending(true);
     try {
@@ -211,7 +217,7 @@ function EventEditSheetBody({
   };
 
   const onResync = async () => {
-    if (target.kind !== "shift") return;
+    if (!target || target.kind !== "shift") return;
     setError(null);
     setCalendarPending(true);
     try {
@@ -233,75 +239,91 @@ function EventEditSheetBody({
 
   return (
     <BottomSheet
-      open={open}
+      open={open && target !== null}
       onClose={onClose}
       title={title}
       actions={
-        <EventEditActions
-          target={target}
-          memberId={memberId}
-          startHour={startHour}
-          startMinute={startMinute}
-          duration={duration}
-          members={members}
-          calendarEventId={calendarEventId}
-          onError={(message) => setError(message || null)}
-        />
+        target ? (
+          <EventEditActions
+            target={target}
+            memberId={memberId}
+            startHour={startHour}
+            startMinute={startMinute}
+            duration={duration}
+            members={members}
+            calendarEventId={calendarEventId}
+            onError={(message) => setError(message || null)}
+          />
+        ) : undefined
       }
     >
-      <Stack>
-        <MemberChipPicker members={members} value={memberId} onChange={setMemberId} />
-        <div className="form-grid-2">
+      {target ? (
+        <Stack>
+          <MemberChipPicker members={members} value={memberId} onChange={setMemberId} />
+          <div className="form-grid-2">
+            <TextInput
+              label="Start hour"
+              type="number"
+              min={0}
+              max={23}
+              value={startHour}
+              onChange={(e) => setStartHour(Number(e.target.value))}
+            />
+            <TextInput
+              label="Start minute"
+              type="number"
+              min={0}
+              max={59}
+              step={15}
+              value={startMinute}
+              onChange={(e) => setStartMinute(Number(e.target.value))}
+            />
+          </div>
           <TextInput
-            label="Start hour"
+            label="Duration (min)"
             type="number"
-            min={0}
-            max={23}
-            value={startHour}
-            onChange={(e) => setStartHour(Number(e.target.value))}
-          />
-          <TextInput
-            label="Start minute"
-            type="number"
-            min={0}
-            max={59}
+            min={15}
             step={15}
-            value={startMinute}
-            onChange={(e) => setStartMinute(Number(e.target.value))}
+            value={duration}
+            onChange={(e) => setDuration(Number(e.target.value))}
           />
-        </div>
-        <TextInput
-          label="Duration (min)"
-          type="number"
-          min={15}
-          step={15}
-          value={duration}
-          onChange={(e) => setDuration(Number(e.target.value))}
-        />
-        {target.kind === "shift" ? (
-          <ShiftCalendarSyncControl
-            calendarConnected={calendarConnected}
-            isNew={false}
-            synced={Boolean(calendarEventId)}
-            pending={calendarPending}
-            onUnsync={() => void onUnsync()}
-            onResync={() => void onResync()}
-          />
-        ) : null}
-        {error ? <p className="error-text">{error}</p> : null}
-      </Stack>
+          {target.kind === "shift" ? (
+            <ShiftCalendarSyncControl
+              calendarConnected={calendarConnected}
+              isNew={false}
+              synced={Boolean(calendarEventId)}
+              pending={calendarPending}
+              onUnsync={() => void onUnsync()}
+              onResync={() => void onResync()}
+            />
+          ) : null}
+          {error ? <p className="error-text">{error}</p> : null}
+        </Stack>
+      ) : null}
     </BottomSheet>
   );
 }
 
+/** Quick-edit sheet for planner events — stays mounted so Vaul can run enter/exit animations. */
 export function EventEditSheet({ target, members, onClose }: EventEditSheetProps) {
-  if (!target) return null;
+  const [stableTarget, setStableTarget] = useState<EditTarget | null>(null);
+  const open = target !== null;
+
+  useEffect(() => {
+    if (target) setStableTarget(target);
+  }, [target]);
+
+  useEffect(() => {
+    if (!open && stableTarget) {
+      const id = window.setTimeout(() => setStableTarget(null), SHEET_EXIT_CLEAR_MS);
+      return () => window.clearTimeout(id);
+    }
+  }, [open, stableTarget]);
 
   return (
     <EventEditSheetBody
-      key={`${target.kind}:${target.data.id}`}
-      open
-      target={target}
+      open={open}
+      target={stableTarget}
       members={members}
       onClose={onClose}
     />

@@ -9,6 +9,11 @@ import {
 } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import type { Profile } from "../../lib/database.types";
+import {
+  clearPersistedCalendarTokens,
+  hasCalendarConnectIntent,
+  persistCalendarAccessToken,
+} from "../../lib/googleCalendarTokens";
 import { supabase } from "../../lib/supabase";
 
 interface AuthContextValue {
@@ -86,6 +91,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } = supabase.auth.onAuthStateChange((_event: string, nextSession) => {
       setSession(nextSession);
       if (nextSession?.user.id) {
+        if (
+          nextSession.provider_token &&
+          hasCalendarConnectIntent()
+        ) {
+          persistCalendarAccessToken(nextSession.user.id, nextSession.provider_token);
+        }
         void loadProfile(nextSession.user.id);
       } else {
         setProfile(null);
@@ -100,9 +111,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [loadProfile]);
 
   const signOut = useCallback(async () => {
+    const userId = session?.user.id;
+    if (userId) clearPersistedCalendarTokens(userId);
     await supabase.auth.signOut();
     setProfile(null);
-  }, []);
+  }, [session?.user.id]);
 
   const value = useMemo(
     () => ({

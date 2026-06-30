@@ -16,6 +16,8 @@ migrate_working_dir/
 # Web
 web/node_modules/
 web/dist/
+web/.env.local
+web/.env.*.local
 
 # Supabase local
 supabase/.temp/

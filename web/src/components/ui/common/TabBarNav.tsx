@@ -4,6 +4,8 @@ import { CalendarDays, Home, Settings, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { ROUTES } from "../../../lib/constants";
 import { NAV_DIRECTION_CLEAR_MS } from "../../../lib/motion";
+import { beginSheetNav, isShiftFormPath } from "../../../lib/navTransition";
+import { playClickSound, playMenuCloseSound } from "../../../lib/sound/interactionSounds";
 
 const links: { to: string; label: string; icon: LucideIcon; end?: boolean }[] = [
   { to: ROUTES.dashboard, label: "Home", icon: Home, end: true },
@@ -98,7 +100,12 @@ export function TabBarNav() {
               return isActive || calendarActive ? "active" : undefined;
             }}
             onClick={() => {
+              if (isShiftFormPath(location.pathname)) {
+                beginSheetNav("down");
+                playMenuCloseSound();
+              }
               hapticTap();
+              playClickSound();
               setNavDirection(activeIndex, index);
               window.setTimeout(clearNavDirection, NAV_DIRECTION_CLEAR_MS);
             }}

@@ -41,7 +41,8 @@
   --shadow-md: 0 4px 12px rgb(15 22 14 / 8%), 0 8px 24px rgb(15 22 14 / 6%);
   --shadow-nav: 0 -4px 24px rgb(15 22 14 / 8%), 0 8px 32px rgb(15 22 14 / 10%);
   --shadow-fab: 0 6px 20px color-mix(in srgb, var(--color-primary) 35%, transparent);
-  --calendar-bottom-inset: calc(var(--tab-bar-height) + env(safe-area-inset-bottom, 0px));
+  --shell-bottom-inset: calc(var(--tab-bar-height) + env(safe-area-inset-bottom, 0px));
+  --calendar-bottom-inset: var(--shell-bottom-inset);
   --calendar-top-inset: env(safe-area-inset-top, 0px);
   --shell-topbar-reserve: calc(
     env(safe-area-inset-top, 0px) + var(--space-md) + var(--text-title) * 1.35 + var(--space-md)
@@ -303,6 +304,10 @@ button:focus:not(:focus-visible) {
   -webkit-overflow-scrolling: touch;
 }
 
+.page-viewport--sheet-host {
+  overflow: hidden;
+}
+
 .app-shell__main--calendar .page-viewport {
   overflow: hidden;
 }
@@ -319,6 +324,13 @@ button:focus:not(:focus-visible) {
   border-radius: calc(var(--radius-card) + 4px) calc(var(--radius-card) + 4px) 0 0;
   box-shadow: 0 -10px 36px rgb(15 22 14 / 14%);
   overflow: hidden;
+}
+
+.page-viewport--sheet-host .page-viewport__content--form {
+  position: absolute;
+  inset: 0 0 var(--shell-bottom-inset) 0;
+  flex: none;
+  z-index: 2;
 }
 
 .form-sheet__handle {
@@ -570,8 +582,16 @@ button:focus:not(:focus-visible) {
   display: block;
 }
 
-.card--interactive:active {
+.card--interactive:active:not(.motion-interactive) {
   transform: scale(0.97);
+}
+
+.card--interactive:focus-visible {
+  outline: none;
+  box-shadow:
+    var(--shadow-sm),
+    0 0 0 2px var(--color-surface),
+    0 0 0 4px var(--color-primary);
 }
 
 @media (hover: hover) {
@@ -613,7 +633,7 @@ button:focus:not(:focus-visible) {
   cursor: not-allowed;
 }
 
-.btn:active:not(:disabled) {
+.btn:active:not(:disabled):not(.motion-interactive) {
   transform: scale(0.96);
 }
 
@@ -696,7 +716,7 @@ button:focus:not(:focus-visible) {
     0 0 0 4px var(--color-primary);
 }
 
-.icon-btn:active {
+.icon-btn:active:not(.motion-interactive) {
   transform: scale(0.92);
   background: color-mix(in srgb, var(--color-primary) 20%, var(--color-primary-soft));
 }
@@ -1215,7 +1235,7 @@ button:focus:not(:focus-visible) {
     box-shadow var(--motion-fast);
 }
 
-.member-chip:active {
+.member-chip:active:not(.motion-interactive) {
   transform: scale(0.96);
   background: color-mix(in srgb, var(--color-primary-soft) 65%, var(--color-surface));
 }
@@ -1291,13 +1311,17 @@ button:focus:not(:focus-visible) {
   box-shadow: var(--shadow-md);
 }
 
+.auth-layout__footer {
+  margin: var(--space-lg) 0 0;
+}
+
 .form-action-bar {
   position: fixed;
   left: 50%;
   transform: translateX(-50%);
   width: 100%;
   max-width: var(--app-max-width);
-  bottom: calc(var(--tab-bar-height) + env(safe-area-inset-bottom, 0px));
+  bottom: var(--shell-bottom-inset);
   padding: var(--space-md) var(--space-lg);
   background: color-mix(in srgb, var(--color-surface) 92%, transparent);
   backdrop-filter: blur(12px);
@@ -1760,7 +1784,7 @@ button:focus:not(:focus-visible) {
     box-shadow var(--motion-fast);
 }
 
-.segmented-control__btn:active {
+.segmented-control__btn:active:not(.motion-interactive) {
   transform: scale(0.97);
   background: color-mix(in srgb, var(--color-primary) 12%, var(--color-primary-soft));
 }
@@ -2081,6 +2105,7 @@ button:focus:not(:focus-visible) {
 .bottom-sheet-backdrop {
   position: fixed;
   inset: 0;
+  bottom: var(--shell-bottom-inset);
   background: rgb(15 22 14 / 40%);
   z-index: var(--overlay-z-backdrop);
   border: none;

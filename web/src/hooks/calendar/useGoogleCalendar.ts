@@ -3,6 +3,12 @@ import { useMutation } from "@tanstack/react-query";
 import { GOOGLE_CALENDAR_SCOPE } from "../../lib/constants";
 import { formatShiftRange, parseDateKey } from "../../lib/dates";
 import type { FamilyMember, Shift } from "../../lib/database.types";
+import {
+  clearPersistedCalendarTokens,
+  getPersistedCalendarAccessToken,
+  persistCalendarAccessToken,
+  setCalendarConnectIntent,
+} from "../../lib/googleCalendarTokens";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../auth/useAuth";
 
@@ -17,14 +23,36 @@ function pad2(n: number): string {
   return n.toString().padStart(2, "0");
 }
 
-async function getProviderToken(): Promise<string> {
+async function getProviderToken(userId: string | undefined): Promise<string> {
   const { data, error } = await supabase.auth.getSession();
   if (error) throw error;
-  const token = data.session?.provider_token;
-  if (!token) {
-    throw new Error("Reconnect Google Calendar from Settings to grant access.");
+
+  const sessionToken = data.session?.provider_token;
+  if (sessionToken) {
+    if (userId) persistCalendarAccessToken(userId, sessionToken);
+    return sessionToken;
   }
-  return token;
+
+  if (userId) {
+    const stored = getPersistedCalendarAccessToken(userId);
+    if (stored) return stored;
+  }
+
+  throw new Error("Reconnect Google Calendar from Settings to grant access.");
+}
+
+async function calendarFetch(url: string, init: RequestInit): Promise<Response> {
+  try {
+    return await fetch(url, init);
+  } catch (err) {
+    if (err instanceof TypeError && err.message === "Failed to fetch") {
+      throw new Error(
+        "Could not reach Google Calendar. Check your network connection and that the Calendar API is enabled in Google Cloud Console.",
+        { cause: err },
+      );
+    }
+    throw err;
+  }
 }
 
 function buildEventBody(
@@ -68,6 +96,7 @@ export function useGoogleCalendar() {
   const { profile, session, refreshProfile } = useAuth();
 
   const connect = useCallback(async () => {
+    setCalendarConnectIntent();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
@@ -85,9 +114,20 @@ export function useGoogleCalendar() {
   const markConnected = useMutation({
     mutationFn: async () => {
       if (!profile?.id) return;
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.provider_token;
+      const refreshToken = sessionData.session?.provider_refresh_token;
+      if (accessToken) {
+        persistCalendarAccessToken(profile.id, accessToken);
+      }
+
       const { error } = await supabase
         .from("profiles")
-        .update({ google_calendar_connected: true })
+        .update({
+          google_calendar_connected: true,
+          ...(refreshToken ? { google_refresh_token: refreshToken } : {}),
+        })
         .eq("id", profile.id);
       if (error) throw error;
       await refreshProfile();
@@ -97,9 +137,13 @@ export function useGoogleCalendar() {
   const disconnect = useMutation({
     mutationFn: async () => {
       if (!profile?.id) return;
+      clearPersistedCalendarTokens(profile.id);
       const { error } = await supabase
         .from("profiles")
-        .update({ google_calendar_connected: false })
+        .update({
+          google_calendar_connected: false,
+          google_refresh_token: null,
+        })
         .eq("id", profile.id);
       if (error) throw error;
       await refreshProfile();
@@ -113,11 +157,11 @@ export function useGoogleCalendar() {
       familyName?: string,
       grandpaName?: string,
     ): Promise<string> => {
-      const token = await getProviderToken();
+      const token = await getProviderToken(profile?.id);
       const body = buildEventBody(shift, member, familyName, grandpaName);
 
       if (shift.calendar_event_id) {
-        const deleteResponse = await fetch(`${CALENDAR_API}/${shift.calendar_event_id}`, {
+        const deleteResponse = await calendarFetch(`${CALENDAR_API}/${shift.calendar_event_id}`, {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -130,7 +174,7 @@ export function useGoogleCalendar() {
         }
       }
 
-      const response = await fetch(CALENDAR_API, {
+      const response = await calendarFetch(CALENDAR_API, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -149,23 +193,27 @@ export function useGoogleCalendar() {
       if (error) throw error;
       return json.id;
     },
-    [],
+    [profile?.id],
   );
 
   const deleteEvent = useCallback(async (eventId: string) => {
-    const token = await getProviderToken();
-    const response = await fetch(`${CALENDAR_API}/${eventId}`, {
+    const token = await getProviderToken(profile?.id);
+    const response = await calendarFetch(`${CALENDAR_API}/${eventId}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!response.ok && response.status !== 404 && response.status !== 410) {
       throw new Error(await response.text());
     }
-  }, []);
+  }, [profile?.id]);
+
+  const hasStoredToken =
+    Boolean(session?.provider_token) ||
+    Boolean(profile?.id && getPersistedCalendarAccessToken(profile.id));
 
   return {
     connected: profile?.google_calendar_connected ?? false,
-    hasProviderToken: Boolean(session?.provider_token),
+    hasProviderToken: hasStoredToken,
     connect,
     disconnect,
     markConnected,

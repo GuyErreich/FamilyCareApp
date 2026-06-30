@@ -33,3 +33,21 @@ export const supabase = new Proxy({} as TypedClient, {
 
 export const isSupabaseConfigured = (): boolean =>
   Boolean(supabaseUrl && supabaseAnonKey);
+
+/** Returns an error message when Supabase cannot be reached (e.g. not started). */
+export async function checkSupabaseReachable(): Promise<string | null> {
+  if (!supabaseUrl?.trim() || !supabaseAnonKey?.trim()) {
+    return "Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in web/.env.local (see docs/supabase-hosted.md).";
+  }
+  try {
+    const response = await fetch(`${supabaseUrl}/auth/v1/settings`, {
+      headers: { apikey: supabaseAnonKey },
+    });
+    if (!response.ok) {
+      return `Supabase is not reachable (HTTP ${response.status}). Check the project URL and API key in web/.env.local.`;
+    }
+    return null;
+  } catch {
+    return "Supabase is not reachable. Check VITE_SUPABASE_URL in web/.env.local and that the hosted project is active.";
+  }
+}

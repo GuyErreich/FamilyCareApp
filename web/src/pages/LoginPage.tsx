@@ -9,8 +9,7 @@ import { ErrorState } from "../components/ui/common/AsyncStates";
 import { FormStack } from "../components/ui/common/FormStack";
 import { TextInput } from "../components/ui/common/TextField";
 import { APP_NAME, ROUTES } from "../lib/constants";
-import { checkGoogleOAuthConfigured } from "../lib/googleOAuth";
-import { supabase } from "../lib/supabase";
+import { checkSupabaseReachable, supabase } from "../lib/supabase";
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -37,16 +36,26 @@ export function LoginPage() {
 
   const onGoogle = async () => {
     setError(null);
-    const check = await checkGoogleOAuthConfigured(import.meta.env.VITE_SUPABASE_URL);
-    if (!check.ok) {
-      setError(check.message ?? "Google sign-in is not configured.");
+    setLoading(true);
+    const unreachable = await checkSupabaseReachable();
+    if (unreachable) {
+      setError(unreachable);
+      setLoading(false);
       return;
     }
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: `${window.location.origin}/` },
     });
-    if (oauthError) setError(oauthError.message);
+    setLoading(false);
+    if (oauthError) {
+      const msg = oauthError.message;
+      setError(
+        msg.includes("provider is not enabled")
+          ? "Google sign-in is not enabled on your Supabase project. Dashboard → Authentication → Providers → Google → enable and add your Client ID + Secret."
+          : msg,
+      );
+    }
   };
 
   return (
@@ -73,11 +82,11 @@ export function LoginPage() {
           <Button type="submit" fullWidth loading={loading} disabled={loading}>
             {loading ? "Signing in…" : "Sign in"}
           </Button>
-          <Button type="button" variant="secondary" fullWidth icon={Globe} onClick={onGoogle}>
+          <Button type="button" variant="secondary" fullWidth icon={Globe} onClick={onGoogle} disabled={loading}>
             Continue with Google
           </Button>
         </FormStack>
-        <p className="muted" style={{ marginTop: 16, marginBottom: 0 }}>
+        <p className="muted auth-layout__footer">
           No account? <Link to={ROUTES.register}>Register</Link>
         </p>
       </Card>

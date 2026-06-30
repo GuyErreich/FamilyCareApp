@@ -1,3 +1,5 @@
+import { motion } from "framer-motion";
+import { useInteractiveMotion } from "../../../hooks/ui/useInteractiveMotion";
 import { MemberAvatar } from "./MemberAvatar";
 import type { FamilyMember } from "../../../lib/database.types";
 
@@ -14,27 +16,34 @@ export function MemberChipPicker({
   onChange,
   label = "Companion",
 }: MemberChipPickerProps) {
+  const { motionProps, wrapClick } = useInteractiveMotion({
+    tapScale: "chip",
+    hover: "none",
+  });
+
   return (
     <div className="field">
       <span className="field__label">{label}</span>
       <div className="member-chips">
         {members.map((member) => (
-          <button
+          <motion.button
             key={member.id}
             type="button"
             className={[
               "member-chip",
+              "motion-interactive",
               value === member.id ? "member-chip--selected" : "",
             ]
               .filter(Boolean)
               .join(" ")}
             style={{ ["--chip-color" as string]: member.color_hex }}
             aria-pressed={value === member.id}
-            onClick={() => onChange(member.id)}
+            onClick={wrapClick(() => onChange(member.id))}
+            {...motionProps}
           >
             <MemberAvatar name={member.name} colorHex={member.color_hex} size="sm" />
             {member.name}
-          </button>
+          </motion.button>
         ))}
       </div>
     </div>
