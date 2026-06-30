@@ -1,6 +1,7 @@
 import { motion, useReducedMotion } from "framer-motion";
-import type { CSSProperties } from "react";
+import { useCallback, useState, type CSSProperties } from "react";
 import { useLocation } from "react-router-dom";
+import { ShellOverlayContext } from "../../../context/shellOverlayContext";
 import { ROUTES } from "../../../lib/constants";
 import { useFamily } from "../../../hooks/family/useFamilyData";
 import { useDeferredShellChrome } from "../../../hooks/useDeferredShellChrome";
@@ -31,6 +32,10 @@ function AppShellContent() {
   const { hideFab, installBannerInset } = useShellUi();
   const location = useLocation();
   const reduceMotion = useReducedMotion();
+  const [overlayHost, setOverlayHost] = useState<HTMLElement | null>(null);
+  const onOverlayHostRef = useCallback((node: HTMLDivElement | null) => {
+    setOverlayHost(node);
+  }, []);
   const isCalendar = location.pathname === ROUTES.calendar;
   const chromeCalendar = useDeferredShellChrome(isCalendar, reduceMotion);
   const isDashboard = location.pathname === ROUTES.dashboard;
@@ -47,8 +52,9 @@ function AppShellContent() {
   } as CSSProperties;
 
   return (
-    <div className="app-frame">
-      <div className="app-shell">
+    <ShellOverlayContext.Provider value={overlayHost}>
+      <div className="app-frame">
+        <div className="app-shell">
         <motion.header
           className="app-topbar"
           initial={false}
@@ -74,9 +80,11 @@ function AppShellContent() {
           <InstallPromptOverlay showOnRoute={!chromeCalendar} />
           <AddShiftFab visible={showFab} />
         </main>
+        <div ref={onOverlayHostRef} className="shell-overlay-host" />
         <TabBarNav />
       </div>
     </div>
+    </ShellOverlayContext.Provider>
   );
 }
 

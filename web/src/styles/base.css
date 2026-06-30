@@ -328,7 +328,7 @@ button:focus:not(:focus-visible) {
 
 .page-viewport--sheet-host .page-viewport__content--form {
   position: absolute;
-  inset: 0 0 var(--shell-bottom-inset) 0;
+  inset: 0;
   flex: none;
   z-index: 2;
 }
@@ -2113,6 +2113,29 @@ button:focus:not(:focus-visible) {
   cursor: pointer;
 }
 
+.shell-overlay-host {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: var(--app-max-width);
+  top: 0;
+  bottom: var(--shell-bottom-inset);
+  z-index: var(--overlay-z-backdrop);
+  pointer-events: none;
+  overflow: clip;
+}
+
+.shell-overlay-host:has([data-state="open"]) {
+  pointer-events: auto;
+}
+
+.shell-overlay-host .bottom-sheet-backdrop {
+  position: absolute;
+  inset: 0;
+  bottom: 0;
+}
+
 .bottom-sheet[data-vaul-drawer] {
   touch-action: none;
   animation-duration: 460ms;
@@ -2198,7 +2221,7 @@ button:focus:not(:focus-visible) {
   left: 0;
   right: 0;
   margin-inline: auto;
-  bottom: var(--calendar-bottom-inset);
+  bottom: var(--shell-bottom-inset);
   width: min(100%, var(--app-max-width));
   max-height: 85dvh;
   display: flex;
@@ -2211,6 +2234,12 @@ button:focus:not(:focus-visible) {
   z-index: var(--overlay-z-sheet);
   overflow: hidden;
   pointer-events: auto;
+}
+
+.shell-overlay-host .bottom-sheet {
+  position: absolute;
+  bottom: 0;
+  max-height: 85%;
 }
 
 .bottom-sheet__handle {

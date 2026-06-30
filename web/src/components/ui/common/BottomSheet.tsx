@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, type ReactNode } from "react";
 import { Drawer } from "vaul";
+import { useShellOverlayHost } from "../../../context/shellOverlayContext";
 import { playMenuCloseSound, playMenuOpenSound } from "../../../lib/sound/interactionSounds";
 import { SheetDismissContext, type DismissMode } from "./sheetDismissContext";
 
@@ -15,6 +16,7 @@ interface BottomSheetProps {
 
 export function BottomSheet({ open, onClose, title, children, actions }: BottomSheetProps) {
   const wasOpenRef = useRef(open);
+  const container = useShellOverlayHost();
 
   useEffect(() => {
     if (open && !wasOpenRef.current) {
@@ -48,6 +50,7 @@ export function BottomSheet({ open, onClose, title, children, actions }: BottomS
       onOpenChange={onOpenChange}
       shouldScaleBackground={false}
       repositionInputs={false}
+      container={container}
     >
       <Drawer.Portal>
         <Drawer.Overlay className="bottom-sheet-backdrop" />

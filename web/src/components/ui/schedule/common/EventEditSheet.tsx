@@ -310,14 +310,15 @@ export function EventEditSheet({ target, members, onClose }: EventEditSheetProps
   const open = target !== null;
 
   useEffect(() => {
-    if (target) setStableTarget(target);
+    if (!target) return;
+    const frame = window.requestAnimationFrame(() => setStableTarget(target));
+    return () => window.cancelAnimationFrame(frame);
   }, [target]);
 
   useEffect(() => {
-    if (!open && stableTarget) {
-      const id = window.setTimeout(() => setStableTarget(null), SHEET_EXIT_CLEAR_MS);
-      return () => window.clearTimeout(id);
-    }
+    if (open || !stableTarget) return;
+    const id = window.setTimeout(() => setStableTarget(null), SHEET_EXIT_CLEAR_MS);
+    return () => window.clearTimeout(id);
   }, [open, stableTarget]);
 
   return (
